@@ -26,7 +26,6 @@ COMP_FLAGS := $(CFLAGS) $(CPPFLAGS) $(DFLAGS) $(DEPFLAGS)
 
 .PHONY: all
 all: $(BIN)
-	./$(BIN) -v
 
 $(BIN): $(OBJS)
 	$(CC) $(COMP_FLAGS) $^ -o $@
