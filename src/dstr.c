@@ -56,6 +56,14 @@ void dstr_push(dstr *str, char c) {
     str->c_str[str->size - 1] = '\0';
 }
 
+void dstr_clear(dstr *str) {
+    assert(str);
+
+    str->c_str[0] = '\0';
+    str->len = 0;
+    str->size = 1;
+}
+
 void dstrcat(dstr *dst, char *src) {
     assert(dst && src);
 

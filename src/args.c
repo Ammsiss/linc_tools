@@ -6,7 +6,7 @@
 
 #include "args.h"
 
-int get_int(char *s) {
+static int get_int(char *s) {
     if (!s || *s == '\0')
         exit(EXIT_FAILURE);
 

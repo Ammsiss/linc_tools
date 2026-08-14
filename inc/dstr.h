@@ -16,6 +16,7 @@ void dstr_init(dstr *str);
 void dstr_free(dstr *str);
 void dstr_reserve(dstr *str, size_t min);
 void dstr_push(dstr *str, char c);
+void dstr_clear(dstr *str);
 void dstrcpy(dstr *str, char *c);
 void dstrcat(dstr *dst, char *src);
 

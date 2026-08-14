@@ -169,6 +169,20 @@ TEST(args, when_duplicate_opt_last_optarg_is_used) {
     TEST_ASSERT_EQUAL_INT(2, opts[0].val_int);
 }
 
+TEST(args, passing_no_opts_when_some_defined_is_ok) {
+    ARGV_IS("test");
+    OPTS_ARE(SIMPLE_OPT("option", 'o'));
+
+    assert_arg_parse();
+}
+
+TEST(args, passing_empty_opt_data_array_is_ok) {
+    ARGV_IS("test");
+    OPTS_ARE((opt_data){0});
+
+    assert_arg_parse();
+}
+
 /************ Test runner ************/
 
 TEST_GROUP_RUNNER(args) {
@@ -186,4 +200,6 @@ TEST_GROUP_RUNNER(args) {
     RUN_TEST_CASE(args, passing_short_opt_with_missing_opt_arg);
     RUN_TEST_CASE(args, passing_unexpected_opt_fails);
     RUN_TEST_CASE(args, when_duplicate_opt_last_optarg_is_used);
+    RUN_TEST_CASE(args, passing_no_opts_when_some_defined_is_ok);
+    RUN_TEST_CASE(args, passing_empty_opt_data_array_is_ok);
 }

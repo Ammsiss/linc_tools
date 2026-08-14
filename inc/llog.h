@@ -12,6 +12,11 @@
 #define LOG_ERR(fmt, ...) \
     llog_log(LLOG_ERR, __FILE__, __LINE__, fmt __VA_OPT__(,) __VA_ARGS__)
 
+#define CCL     "\033[m"
+#define CGREEN   "\033[2;36m"
+#define CRED     "\033[91m"
+#define CYELLOW  "\033[33m"
+
 typedef enum {
     LLOG_INFO,
     LLOG_WARN,
@@ -23,6 +28,7 @@ enum {
 };
 
 int llog_get_log_fd(void);
+int llog_get_drops(void);
 const char *llog_last_log(void);
 void llog_set_fd(int log_fd);
 void llog_reset(void);

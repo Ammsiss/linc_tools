@@ -49,26 +49,32 @@ TEST(llog, reset_sets_fd_to_sentinal) {
 }
 
 TEST(llog, log_info_header_correct) {
-    char exp_log[LBUF_SIZE] = "INFO f:0: m\n";
+    char exp_log[LBUF_SIZE] = CGREEN "INFO" CCL " f:0: m\n";
     llog_log(LLOG_INFO, "f", 0, "m");
     TEST_ASSERT_EQUAL_STRING(exp_log, llog_last_log());
 }
 
 TEST(llog, log_error_header_correct) {
-    char exp_log[LBUF_SIZE] = "ERR f:0: m\n";
+    char exp_log[LBUF_SIZE] = CRED "ERR" CCL " f:0: m\n";
     llog_log(LLOG_ERR, "f", 0, "m");
     TEST_ASSERT_EQUAL_STRING(exp_log, llog_last_log());
 }
 
 TEST(llog, log_writes_to_fd) {
-    exp_log = "INFO f:0: m\n";
+    exp_log = CGREEN "INFO" CCL " f:0: m\n";
     llog_log(LLOG_INFO, "f", 0, "m");
     TEST_ASSERT_EQUAL_STRING(exp_log, read_log());
 }
 
 TEST(llog, log_buf_equal_to_fd_output) {
-    char exp_log[LBUF_SIZE] = "ERR main.c:10: Malloc failure\n";
+    char exp_log[LBUF_SIZE] = CRED "ERR" CCL " main.c:10: Malloc failure\n";
     llog_log(LLOG_ERR, "main.c", 10, "Malloc failure");
+    TEST_ASSERT_EQUAL_STRING(exp_log, read_log());
+}
+
+TEST(llog, normalizes_newlines) {
+    exp_log = CRED "ERR" CCL " main.c:1: \\n\n";
+    llog_log(LLOG_ERR, "main.c", 1, "\n");
     TEST_ASSERT_EQUAL_STRING(exp_log, read_log());
 }
 
@@ -81,4 +87,5 @@ TEST_GROUP_RUNNER(llog) {
     RUN_TEST_CASE(llog, log_error_header_correct);
     RUN_TEST_CASE(llog, log_writes_to_fd);
     RUN_TEST_CASE(llog, log_buf_equal_to_fd_output);
+    RUN_TEST_CASE(llog, normalizes_newlines);
 }
