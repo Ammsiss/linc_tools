@@ -23,13 +23,13 @@
     if (opts[LOGFD].found)
         logfd = opts[LOGFD].val_int;  */
 
-
-// TODO: how does a caller know if an optional opt arg was parsed?
-
 #ifndef ARGS_H
 #define ARGS_H
 
 #include <stddef.h>
+
+#define ARG_SILENT 1
+#define ARG_NO_NON_OPTS 2
 
 typedef enum {
     INT_ARG,
@@ -48,12 +48,13 @@ typedef struct {
     opt_arg_info has_arg;
     opt_arg_type arg_type;
     bool found;
+    bool opt_arg_found;
     union {
         int val_int;
         char *val_str;
     };
 } opt_data;
 
-int arg_parse(char *const *argv, opt_data *opts);
+int arg_parse(char *const *argv, opt_data *opts, int flags);
 
 #endif
