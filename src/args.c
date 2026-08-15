@@ -1,25 +1,45 @@
+#include <assert.h>
 #include <limits.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>
 #include <string.h>
 
 #include "args.h"
+#include "common.h"
 
-static int get_int(char *s) {
-    if (!s || *s == '\0')
-        exit(EXIT_FAILURE);
+static bool print_errs = true;
+
+__attribute__ ((format(printf, 1, 2)))
+static void report_err(const char *fmt, ...) {
+    if (!print_errs)
+        return;
+
+    va_list va;
+
+    va_start(va, fmt);
+    vfprintf(stderr, fmt, va);
+    va_end(va);
+}
+
+static int get_int(char *s, int *out) {
+    assert(s && out);
+
+    if (*s == '\0')
+        return -1;
 
     char *endptr;
     long num = strtol(s, &endptr, 10);
 
-    if (num == LONG_MIN || num == LONG_MAX)
-        exit(EXIT_FAILURE);
+    if (num < INT_MIN || num > INT_MAX)
+        return -1;
 
     if (*endptr != '\0')
-        exit(EXIT_FAILURE);
+        return -1;
 
-    return num;
+    *out = num;
+    return 0;
 }
 
 static void parse_opt_arg_str(char *opt_arg, opt_data *data) {
@@ -29,14 +49,20 @@ static void parse_opt_arg_str(char *opt_arg, opt_data *data) {
     data->val_str = opt_arg;
 }
 
-static void parse_opt_arg_int(char *opt_arg, opt_data *data) {
+static int parse_opt_arg_int(char *opt_arg, opt_data *data) {
     if (!opt_arg) {
         data->opt_arg_found = false;
-        return;
+        return 0;
     }
 
-    data->val_int = get_int(opt_arg);
+    int num;
+    if (get_int(opt_arg, &num) == -1)
+        return -1;
+
+    data->val_int = num;
     data->opt_arg_found = true;
+
+    return 0;
 }
 
 static opt_data *lookup_opt_by_short_opt(opt_data *opts, char short_opt) {
@@ -51,9 +77,13 @@ static opt_data *lookup_opt_by_short_opt(opt_data *opts, char short_opt) {
     return NULL;
 }
 
-int arg_parse(char * const *argv, opt_data *opts, int flags) {
-    if (flags & ARG_SILENT)
+int arg_parse(int argc, char * const *argv, opt_data *opts, int flags) {
+    assert(argv && opts);
+
+    if (flags & ARG_SILENT) {
         opterr = 0;
+        print_errs = false;
+    }
 
     size_t opt_n = 0;
     for (opt_data *opt = opts;; ++opt) {
@@ -62,19 +92,15 @@ int arg_parse(char * const *argv, opt_data *opts, int flags) {
         ++opt_n;
     }
 
-    int argc = 0;
-    for (char *const *arg = argv; *arg != NULL; ++arg)
-        ++argc;
-
     int long_optind;
 
     struct option *long_opts = calloc(sizeof(opt_data), opt_n + 1);
     if (!long_opts)
-        exit(EXIT_FAILURE);
+        LIB_FATAL("calloc: out of memory");
 
     char *short_opts = calloc(sizeof(char), opt_n * 3 + 1);
     if (!short_opts)
-        exit(EXIT_FAILURE);
+        LIB_FATAL("calloc: out of memory");
 
     for (size_t i = 0, y = 0; i < opt_n; ++i, ++y) {
         long_opts[i].name    = opts[i].long_name;
@@ -103,7 +129,7 @@ int arg_parse(char * const *argv, opt_data *opts, int flags) {
 
         opt_data *opt = lookup_opt_by_short_opt(opts, c);
         if (!opt) {
-            fprintf(stderr, "%s: unexpected opt val: %c\n", argv[0], c);
+            report_err("%s: unexpected opt value: %c\n", argv[0], c);
             goto fail;
         }
 
@@ -113,19 +139,25 @@ int arg_parse(char * const *argv, opt_data *opts, int flags) {
             continue;
 
         switch (opt->arg_type) {
-        case INT_ARG: parse_opt_arg_int(optarg, opt); break;
-        case STR_ARG: parse_opt_arg_str(optarg, opt); break;
+        case INT_ARG:
+            if (parse_opt_arg_int(optarg, opt) == -1) {
+                report_err("%s: bad arg to '--%s' -- '%s'\n",
+                        argv[0], opt->long_name, optarg);
+                goto fail;
+            }
+            break;
+        case STR_ARG:
+            parse_opt_arg_str(optarg, opt);
+            break;
         }
     }
 
     if (flags & ARG_NO_NON_OPTS) {
         if (optind < argc) {
-            if (!(flags & ARG_SILENT)) {
-                fprintf(stderr, "%s: unrecognized argv elements: ", argv[0]);
-                while (optind < argc)
-                    fprintf(stderr, "%s ", argv[optind++]);
-                printf("\n");
-            }
+            report_err("%s: unrecognized argv elements: ", argv[0]);
+            while (optind < argc)
+                report_err("%s ", argv[optind++]);
+            report_err("\n");
 
             goto fail;
         }

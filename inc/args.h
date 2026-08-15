@@ -55,6 +55,6 @@ typedef struct {
     };
 } opt_data;
 
-int arg_parse(char *const *argv, opt_data *opts, int flags);
+int arg_parse(int argc, char *const *argv, opt_data *opts, int flags);
 
 #endif
