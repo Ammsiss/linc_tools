@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 
-#define PFFORMAT(x, y) __attribute__ ((format(printf, (x), (y))))
+#define DSTR_PFFORMAT(x, y) __attribute__ ((format(printf, (x), (y))))
 
 typedef struct {
     char *c_str;
@@ -20,7 +20,7 @@ void dstr_clear(dstr *str);
 void dstrcpy(dstr *str, char *c);
 void dstrcat(dstr *dst, char *src);
 
-PFFORMAT(2, 3)
+DSTR_PFFORMAT(2, 3)
 void dstr_printf(dstr *dst, char *fmt, ...);
 
 #endif

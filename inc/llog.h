@@ -1,8 +1,6 @@
 #ifndef LLOG_H
 #define LLOG_H
 
-#define PFFORMAT(x, y) __attribute__ ((format(printf, (x), (y))))
-
 #define LOG_INFO(fmt, ...) \
     llog_log(LLOG_INFO, __FILE__, __LINE__, fmt __VA_OPT__(,) __VA_ARGS__)
 
