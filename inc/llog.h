@@ -1,6 +1,8 @@
 #ifndef LLOG_H
 #define LLOG_H
 
+#include <stddef.h>
+
 #define LOG_INFO(fmt, ...) \
     llog_log(LLOG_INFO, __FILE__, __LINE__, fmt __VA_OPT__(,) __VA_ARGS__)
 
@@ -27,8 +29,10 @@ enum {
 
 int llog_get_log_fd(void);
 int llog_get_drops(void);
+void llog_color_on(bool on);
 const char *llog_last_log(void);
 void llog_set_fd(int log_fd);
+void llog_set_output_handler(void (*func)(const char *, size_t, llog_lvl));
 void llog_reset(void);
 void llog_log(llog_lvl lvl, const char *file, int line, const char *fmt, ...);
 

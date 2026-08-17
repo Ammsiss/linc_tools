@@ -5,14 +5,14 @@
 
 /* Declare any types that you APPLY...
  *
- * eg) // darr_user_type_decs.h //
+ * eg) // darr_type_decs.h //
  *     struct mystruct;
  *     ...
  *     APPLY(arg, da_mystruct, struct mystruct)
  *
  * ...then include the full type definitions.
  *
- * eg) // darr_user_type_defs.h //
+ * eg) // darr_type_defs.h //
  *     #include "mystruct.h" */
 
 #if __has_include("darr_type_decs.h")
@@ -28,11 +28,11 @@
         size_t size; \
         size_t cap; \
     } name; \
-    int name##_init(name *arr);\
+    void name##_init(name *arr);\
     void name##_free(name *arr); \
     type *name##_push(name *arr); \
-    int name##_reserve(name *arr, size_t min); \
-    int name##_delete(name *arr, size_t remove_i);
+    void name##_reserve(name *arr, size_t min); \
+    void name##_delete(name *arr, size_t remove_i);
 
 #define DA_DECLARE(_, name, type) DECLARE_DYN_ARR(name, type)
     DYN_ARR_TYPES(DA_DECLARE, _)

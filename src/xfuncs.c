@@ -97,6 +97,14 @@ void *xmalloc_at(const site_info *site, int size) {
     return rv;
 }
 
+void *xrealloc_at(const site_info *site, void *ptr, int size) {
+    void *rv = realloc(ptr, size);
+    if (!rv)
+        SYS_FAIL(realloc);
+
+    return rv;
+}
+
 int xsigaction_at(const site_info *site, int signum,
         const struct sigaction *act, struct sigaction *oldact) {
     int rv = sigaction(signum, act, oldact);
@@ -183,6 +191,14 @@ int xpipe_at(const site_info *site, int pipefd[2]) {
     int rv = pipe(pipefd);
     if (rv == -1)
         SYS_FAIL(pipe);
+
+    return rv;
+}
+
+int xpipe2_at(const site_info *site, int pipefd[2], int flags) {
+    int rv = pipe2(pipefd, flags);
+    if (rv == -1)
+        SYS_FAIL(pipe2);
 
     return rv;
 }

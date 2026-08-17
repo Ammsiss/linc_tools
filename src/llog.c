@@ -10,9 +10,11 @@
 
 #define BUF_SIZE 8192
 
+static void (*output_handler)(const char *, size_t, llog_lvl) = NULL;
 static int lfd = NO_LOG_FD;
 static int drops = 0;
 static char last_log[BUF_SIZE];
+static bool color_output = true;
 
 int llog_get_log_fd(void) {
     return lfd;
@@ -26,8 +28,16 @@ const char *llog_last_log(void) {
     return last_log;
 }
 
+void llog_color_on(bool on) {
+    color_output = on;
+}
+
 void llog_set_fd(int log_fd) {
     lfd = log_fd;
+}
+
+void llog_set_output_handler(void (*func)(const char *, size_t, llog_lvl)) {
+    output_handler = func;
 }
 
 void llog_reset(void) {
@@ -36,11 +46,20 @@ void llog_reset(void) {
 }
 
 static const char *lvlstr(llog_lvl level) {
-    switch (level) {
-    case LLOG_INFO: return CGREEN "INFO" CCL;
-    case LLOG_WARN: return CYELLOW "WARN" CCL;
-    case LLOG_ERR: return CRED "ERR" CCL;
-    default: return "";
+    if (color_output) {
+        switch (level) {
+        case LLOG_INFO: return CGREEN "INFO" CCL;
+        case LLOG_WARN: return CYELLOW "WARN" CCL;
+        case LLOG_ERR: return CRED "ERR" CCL;
+        default: return "";
+        }
+    } else {
+        switch (level) {
+        case LLOG_INFO: return "INFO";
+        case LLOG_WARN: return "WARN";
+        case LLOG_ERR: return "ERR";
+        default: return "";
+        }
     }
 }
 
@@ -82,8 +101,12 @@ void llog_log(llog_lvl lvl, const char *file, int line, const char *fmt, ...) {
     dstrcat(&output_msg, user_msg);
     convert_newlines(&output_msg);
 
-    if (write(lfd, output_msg.c_str, output_msg.len) != (int) output_msg.len)
-        goto fail;
+    if (output_handler) {
+        output_handler(output_msg.c_str, output_msg.len, lvl);
+    } else {
+        if (write(lfd, output_msg.c_str, output_msg.len) != (int) output_msg.len)
+            goto fail;
+    }
 
     strncpy(last_log, output_msg.c_str, output_msg.size);
 

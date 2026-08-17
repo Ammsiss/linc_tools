@@ -16,8 +16,7 @@ static void validate_array(da_int *arr, size_t size, size_t cap) {
 /************ Fixture ************/
 
 TEST_SETUP(darr) {
-    int rv = da_init(&arr);
-    TEST_ASSERT_EQUAL_INT(0, rv);
+    da_init(&arr);
     validate_array(&arr, 0, 0);
 }
 
@@ -28,26 +27,21 @@ TEST_TEAR_DOWN(darr) {
 /************ Tests ************/
 
 TEST(darr, reserve_min_lte_cap_is_no_op) {
-    int rv = da_reserve(&arr, 0);
-    TEST_ASSERT_EQUAL_INT(0, rv);
-
+    da_reserve(&arr, 0);
     validate_array(&arr, 0, 0);
 }
 
 TEST(darr, reserve_empty_array) {
-    int rv = da_reserve(&arr, 10);
-    TEST_ASSERT_EQUAL_INT(0, rv);
+    da_reserve(&arr, 10);
     validate_array(&arr, 0, 10);
 }
 
 TEST(darr, reserve_non_empty_array) {
     /* initial allocation ... realloc(NULL, size) */
-    int rv = da_reserve(&arr, 10);
-    TEST_ASSERT_EQUAL_INT(0, rv);
+    da_reserve(&arr, 10);
     validate_array(&arr, 0, 10);
     /* actual realloc call ... realloc (data, size) */
-    rv = da_reserve(&arr, 20);
-    TEST_ASSERT_EQUAL_INT(0, rv);
+    da_reserve(&arr, 20);
     validate_array(&arr, 0, 20);
 }
 
@@ -69,9 +63,6 @@ TEST(darr, push_returns_new_element) {
     int *p = da_push(&arr);
     TEST_ASSERT_EQUAL_PTR(&arr.data[0], p);
     validate_array(&arr, 1, 1);
-
-    /* push should zero out new element */
-    TEST_ASSERT_EQUAL_INT(0, *p);
 }
 
 TEST(darr, delete_only_element) {

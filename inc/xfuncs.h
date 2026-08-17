@@ -49,7 +49,7 @@ typedef struct {
 
 #define XFATAL_HANDLER(name) \
     __attribute__ ((__noreturn__)) \
-    void name(const xinfo *info)
+    void name(const xinfo *info [[maybe_unused]])
 
 __attribute__ ((__noreturn__))
 typedef void (xfatal_handler)(const xinfo *);
@@ -67,6 +67,9 @@ int xclose_at(const site_info *site, int fd);
 
 #define xmalloc(...) xmalloc_at(&SITE, __VA_ARGS__)
 void *xmalloc_at(const site_info *site, int size);
+
+#define xrealloc(...) xrealloc_at(&SITE, __VA_ARGS__)
+void *xrealloc_at(const site_info *site, void *ptr, int size);
 
 #define xsigaction(...) xsigaction_at(&SITE, __VA_ARGS__)
 int xsigaction_at(const site_info *site, int signum,
@@ -102,6 +105,9 @@ int xatexit_at(const site_info *site, void (*function)(void));
 
 #define xpipe(...) xpipe_at(&SITE, __VA_ARGS__)
 int xpipe_at(const site_info *site, int pipefd[2]);
+
+#define xpipe2(...) xpipe2_at(&SITE, __VA_ARGS__)
+int xpipe2_at(const site_info *site, int pipefd[2], int flags);
 
 #define xfork() xfork_at(&SITE)
 int xfork_at(const site_info *site);
