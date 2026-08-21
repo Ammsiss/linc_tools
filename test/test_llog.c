@@ -4,88 +4,74 @@
 #include <fcntl.h>
 
 #include "unity_fixture.h"
-#include "utils.h"
 #include "llog.h"
 
 TEST_GROUP(llog);
 
 /************ Shared utils ************/
 
-#define LBUF_SIZE 8192
+static char log_buf[8192];
 
-static int pfd[2];
-static char pbuf[LBUF_SIZE];
-static const char *exp_log;
+LLOG_SINK(info_sink) {
+    TEST_ASSERT_EQUAL_INT(LLOG_INFO, info->log_level);
+    snprintf(log_buf, 8192, "INFO %s", info->msg);
+}
 
-static const char *read_log(void) {
-    int num_read = xread(pfd[0], pbuf, LBUF_SIZE);
-    pbuf[num_read] = '\0';
-    return pbuf;
+LLOG_SINK(err_sink) {
+    TEST_ASSERT_EQUAL_INT(LLOG_ERR, info->log_level);
+    snprintf(log_buf, 8192, "ERROR %s", info->msg);
+}
+
+LLOG_SINK(warn_sink) {
+    TEST_ASSERT_EQUAL_INT(LLOG_WARN, info->log_level);
+    snprintf(log_buf, 8192, "WARN %s", info->msg);
 }
 
 /************ Fixture ************/
 
 TEST_SETUP(llog) {
-    xpipe(pfd);
-    llog_set_fd(pfd[1]);
+    log_buf[0] = '\0';
 }
 
 TEST_TEAR_DOWN(llog) {
-    xclose(pfd[0]);
-    xclose(pfd[1]);
+    llog_reset();
 }
 
 /************ Tests ************/
 
-TEST(llog, set_fd_sets_fd) {
-    llog_set_fd(10);
-    TEST_ASSERT_EQUAL(10, llog_get_log_fd());
+TEST(llog, simple_info_log) {
+    llog_set_sink(info_sink);
+
+    LOG_INFO("hi");
+    TEST_ASSERT_EQUAL_STRING("INFO hi", log_buf);
 }
 
-TEST(llog, reset_sets_fd_to_sentinal) {
-    llog_set_fd(10);
-    llog_reset();
-    TEST_ASSERT_EQUAL(NO_LOG_FD, llog_get_log_fd());
+TEST(llog, simple_err_log) {
+    llog_set_sink(err_sink);
+
+    LOG_ERR("hi");
+    TEST_ASSERT_EQUAL_STRING("ERROR hi", log_buf);
 }
 
-TEST(llog, log_info_header_correct) {
-    char exp_log[LBUF_SIZE] = CGREEN "INFO" CCL " f:0: m\n";
-    llog_log(LLOG_INFO, "f", 0, "m");
-    TEST_ASSERT_EQUAL_STRING(exp_log, llog_last_log());
+TEST(llog, simple_warn_log) {
+    llog_set_sink(warn_sink);
+
+    LOG_WARN("hi");
+    TEST_ASSERT_EQUAL_STRING("WARN hi", log_buf);
 }
 
-TEST(llog, log_error_header_correct) {
-    char exp_log[LBUF_SIZE] = CRED "ERR" CCL " f:0: m\n";
-    llog_log(LLOG_ERR, "f", 0, "m");
-    TEST_ASSERT_EQUAL_STRING(exp_log, llog_last_log());
-}
+TEST(llog, special_chars_are_normalized) {
+    llog_set_sink(info_sink);
 
-TEST(llog, log_writes_to_fd) {
-    exp_log = CGREEN "INFO" CCL " f:0: m\n";
-    llog_log(LLOG_INFO, "f", 0, "m");
-    TEST_ASSERT_EQUAL_STRING(exp_log, read_log());
-}
-
-TEST(llog, log_buf_equal_to_fd_output) {
-    char exp_log[LBUF_SIZE] = CRED "ERR" CCL " main.c:10: Malloc failure\n";
-    llog_log(LLOG_ERR, "main.c", 10, "Malloc failure");
-    TEST_ASSERT_EQUAL_STRING(exp_log, read_log());
-}
-
-TEST(llog, normalizes_newlines) {
-    exp_log = CRED "ERR" CCL " main.c:1: \\n\n";
-    llog_log(LLOG_ERR, "main.c", 1, "\n");
-    TEST_ASSERT_EQUAL_STRING(exp_log, read_log());
+    LOG_INFO("\n\t");
+    TEST_ASSERT_EQUAL_STRING("INFO \\n\\t", log_buf);
 }
 
 /************ Test runner ************/
 
 TEST_GROUP_RUNNER(llog) {
-    RUN_TEST_CASE(llog, set_fd_sets_fd);
-    RUN_TEST_CASE(llog, reset_sets_fd_to_sentinal);
-    RUN_TEST_CASE(llog, log_info_header_correct);
-    RUN_TEST_CASE(llog, log_error_header_correct);
-    RUN_TEST_CASE(llog, log_writes_to_fd);
-    RUN_TEST_CASE(llog, log_buf_equal_to_fd_output);
-    RUN_TEST_CASE(llog, normalizes_newlines);
+    RUN_TEST_CASE(llog, simple_info_log);
+    RUN_TEST_CASE(llog, simple_err_log);
+    RUN_TEST_CASE(llog, simple_info_log);
+    RUN_TEST_CASE(llog, special_chars_are_normalized);
 }

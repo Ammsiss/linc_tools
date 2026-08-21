@@ -64,18 +64,6 @@ void dstr_clear(dstr *str) {
     str->size = 1;
 }
 
-void dstrcat(dstr *dst, char *src) {
-    assert(dst && src);
-
-    size_t src_len = strlen(src);
-
-    dstr_reserve(dst, dst->size + src_len);
-    dst->size += src_len;
-
-    strncat(&dst->c_str[dst->len], src, src_len);
-    dst->len += src_len;
-}
-
 void dstr_printf(dstr *dst, char *fmt, ...) {
     assert(dst && fmt);
 
@@ -91,6 +79,8 @@ void dstr_printf(dstr *dst, char *fmt, ...) {
 }
 
 void dstrcpy(dstr *dst, char *src) {
+    assert(dst && src);
+
     size_t src_len = strlen(src);
 
     dstr_reserve(dst, dst->size + src_len);
@@ -98,4 +88,39 @@ void dstrcpy(dstr *dst, char *src) {
 
     strncpy(dst->c_str, src, dst->size);
     dst->len = src_len;
+}
+
+void dstrncpy(dstr *dst, char *src, size_t n) {
+    assert(dst && src);
+
+    dstr_reserve(dst, n + 1);
+    dst->size = n + 1;
+
+    strncpy(dst->c_str, src, n);
+    dst->c_str[n] = '\0';
+
+    dst->len = n;
+}
+
+void dstrcat(dstr *dst, const char *src) {
+    assert(dst);
+    assert(src);
+
+    size_t src_len = strlen(src);
+
+    dstr_reserve(dst, dst->size + src_len);
+    dst->size += src_len;
+
+    strncat(&dst->c_str[dst->len], src, src_len);
+    dst->len += src_len;
+}
+
+void dstrncat(dstr *dst, const char *src, size_t n) {
+    assert(dst && src);
+
+    dstr_reserve(dst, dst->size + n);
+    dst->size += n;
+
+    strncat(&dst->c_str[dst->len], src, n);
+    dst->len += n;
 }

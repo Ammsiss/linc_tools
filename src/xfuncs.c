@@ -1,5 +1,7 @@
 #define _GNU_SOURCE
 
+#include <stdio.h>
+#include <string.h>
 #include <stdarg.h>
 #include <assert.h>
 #include <stdlib.h>
@@ -93,6 +95,14 @@ void *xmalloc_at(const site_info *site, int size) {
     void *rv = malloc(size);
     if (!rv)
         SYS_FAIL(malloc);
+
+    return rv;
+}
+
+void *xcalloc_at(const site_info *site, size_t nmemb, size_t size) {
+    void *rv = calloc(nmemb, size);
+    if (!rv)
+        SYS_FAIL(calloc);
 
     return rv;
 }
@@ -207,6 +217,66 @@ int xfork_at(const site_info *site) {
     int rv = fork();
     if (rv == -1)
         SYS_FAIL(fork);
+
+    return rv;
+}
+
+int xtcgetattr_at(const site_info *site, int fd, struct termios *tio) {
+    int rv = tcgetattr(fd, tio);
+    if (rv == -1)
+        SYS_FAIL(tcgetattr);
+
+    return rv;
+}
+
+int xforkpty_at(const site_info *site, int *amaster, char *name,
+        const struct termios *tio, const struct winsize *winp) {
+    int rv = forkpty(amaster, name, tio, winp);
+    if (rv == -1)
+        SYS_FAIL(forkpty);
+
+    return rv;
+}
+
+int xpoll_at(const site_info *site, struct pollfd *fds, nfds_t nfds,
+        int timeout) {
+    int rv = poll(fds, nfds, timeout);
+    if (rv == -1)
+        SYS_FAIL(poll);
+
+    return rv;
+}
+
+int xtimerfd_create_at(const site_info *site, int clockid, int flags) {
+    int rv = timerfd_create(clockid, flags);
+    if (rv == -1)
+        SYS_FAIL(timerfd_create);
+
+    return rv;
+}
+
+int xtimerfd_settime_at(const site_info *site, int fd, int flags,
+        const struct itimerspec *new_value, struct itimerspec *old_value) {
+    int rv = timerfd_settime(fd, flags, new_value, old_value);
+    if (rv == -1)
+        SYS_FAIL(timerfd_settime);
+
+    return rv;
+}
+
+char *xstrdup_at(const site_info *site, const char *s) {
+    char *rv = strdup(s);
+    if (!rv)
+        SYS_FAIL(strdup);
+
+    return rv;
+}
+
+int xsetvbuf_at(const site_info *site, FILE *stream, char *buf,
+        int mode, size_t size) {
+    int rv = setvbuf(stream, buf, mode, size);
+    if (rv != 0)
+        SYS_FAIL(setvbuf);
 
     return rv;
 }

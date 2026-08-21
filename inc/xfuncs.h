@@ -3,8 +3,13 @@
 
 #include <fcntl.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <unistd.h>
 #include <signal.h>
+#include <termios.h>
+#include <pty.h>
+#include <poll.h>
+#include <sys/timerfd.h>
 
 #define SITE \
     (site_info){ \
@@ -68,6 +73,9 @@ int xclose_at(const site_info *site, int fd);
 #define xmalloc(...) xmalloc_at(&SITE, __VA_ARGS__)
 void *xmalloc_at(const site_info *site, int size);
 
+#define xcalloc(...) xcalloc_at(&SITE, __VA_ARGS__)
+void *xcalloc_at(const site_info *site, size_t nmemb, size_t size);
+
 #define xrealloc(...) xrealloc_at(&SITE, __VA_ARGS__)
 void *xrealloc_at(const site_info *site, void *ptr, int size);
 
@@ -112,6 +120,30 @@ int xpipe2_at(const site_info *site, int pipefd[2], int flags);
 #define xfork() xfork_at(&SITE)
 int xfork_at(const site_info *site);
 
+#define xtcgetattr(...) xtcgetattr_at(&SITE, __VA_ARGS__)
+int xtcgetattr_at(const site_info *site, int fd, struct termios *tio);
+
+#define xforkpty(...) xforkpty_at(&SITE, __VA_ARGS__)
+int xforkpty_at(const site_info *site, int *amaster, char *name,
+        const struct termios *tio, const struct winsize *winp);
+
+#define xpoll(...) xpoll_at(&SITE, __VA_ARGS__)
+int xpoll_at(const site_info *site, struct pollfd *fds, nfds_t nfds,
+        int timeout);
+
+#define xtimerfd_create(...) xtimerfd_create_at(&SITE, __VA_ARGS__)
+int xtimerfd_create_at(const site_info *site, int clockid, int flags);
+
+#define xtimerfd_settime(...) xtimerfd_settime_at(&SITE, __VA_ARGS__)
+int xtimerfd_settime_at(const site_info *site, int fd, int flags,
+        const struct itimerspec *new_value, struct itimerspec *old_value);
+
+#define xstrdup(...) xstrdup_at(&SITE, __VA_ARGS__)
+char *xstrdup_at(const site_info *site, const char *s);
+
+#define xsetvbuf(...) xsetvbuf_at(&SITE, __VA_ARGS__)
+int xsetvbuf_at(const site_info *site, FILE *stream, char *buf,
+        int mode, size_t size);
 /*
 #define x(...) x_at(&SITE, __VA_ARGS__)
 int x_at(const site_info *site, );

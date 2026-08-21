@@ -1,122 +1,72 @@
+#define _GNU_SOURCE
+
+#include <assert.h>
+#include <stdlib.h>
 #include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
-#include <string.h>
 #include <unistd.h>
 
 #include "llog.h"
-#include "dstr.h"
 #include "common.h"
+#include "dstr.h"
 
-#define BUF_SIZE 8192
+static llog_sink *sink = NULL;
 
-static void (*output_handler)(const char *, size_t, llog_lvl) = NULL;
-static int lfd = NO_LOG_FD;
-static int drops = 0;
-static char last_log[BUF_SIZE];
-static bool color_output = true;
-
-int llog_get_log_fd(void) {
-    return lfd;
-}
-
-int llog_get_drops(void) {
-    return drops;
-}
-
-const char *llog_last_log(void) {
-    return last_log;
-}
-
-void llog_color_on(bool on) {
-    color_output = on;
-}
-
-void llog_set_fd(int log_fd) {
-    lfd = log_fd;
-}
-
-void llog_set_output_handler(void (*func)(const char *, size_t, llog_lvl)) {
-    output_handler = func;
+void llog_set_sink(llog_sink *sink_func) {
+    sink = sink_func;
 }
 
 void llog_reset(void) {
-    lfd = NO_LOG_FD;
-    drops = 0;
+    sink = NULL;
 }
 
-static const char *lvlstr(llog_lvl level) {
-    if (color_output) {
-        switch (level) {
-        case LLOG_INFO: return CGREEN "INFO" CCL;
-        case LLOG_WARN: return CYELLOW "WARN" CCL;
-        case LLOG_ERR: return CRED "ERR" CCL;
-        default: return "";
-        }
-    } else {
-        switch (level) {
-        case LLOG_INFO: return "INFO";
-        case LLOG_WARN: return "WARN";
-        case LLOG_ERR: return "ERR";
-        default: return "";
-        }
-    }
-}
-
-static void convert_newlines(dstr *output_msg) {
+static void convert_special_chars(char **output_msg) {
     dstr out;
     dstr_init(&out);
 
-    for (char *c = output_msg->c_str; *c != '\0'; ++c) {
+    for (char *c = *output_msg; *c != '\0'; ++c) {
         if (*c == '\n') {
             dstrcat(&out, "\\n");
+        } else if (*c == '\t') {
+            dstrcat(&out, "\\t");
         } else
             dstr_push(&out, *c);
     }
 
-    dstr_push(&out, '\n');
-
-    dstr_free(output_msg);
-    dstr_init(output_msg);
-    dstrcpy(output_msg, out.c_str);
-
-    dstr_free(&out);
+    free(*output_msg);
+    *output_msg = out.c_str;
 }
 
-void llog_log(llog_lvl lvl, const char *file, int line, const char *fmt, ...) {
-    dstr output_msg;
+void llog_log(llog_lvl lvl, const llog_site_info *site, const char *fmt, ...) {
+    assert(site);
+    assert(fmt);
+
+    if (!sink)
+        return;
+
     int saved_errno = errno;
+
+    static llog_info info;
     va_list va;
 
-    dstr_init(&output_msg);
-    dstr_printf(&output_msg, "%s %s:%d: ", lvlstr(lvl), file, line);
-
-    char user_msg[BUF_SIZE];
+    info.saved_errno = saved_errno;
+    info.site = site;
+    info.log_level = lvl;
+    info.pid = getpid();
+    info.ppid = getppid();
+    info.pgid = getpgrp();
+    info.tid = gettid();
 
     va_start(va, fmt);
-     if (vsnprintf(user_msg, BUF_SIZE, fmt, va) < 0)
-         LIB_FATAL("llog: vsnprintf: output error");
-    va_end(va);
+     if (vasprintf(&info.msg, fmt, va) < 0)
+         LIB_FATAL("llog: vasprintf: allocation or IO error");
+     va_end(va);
 
-    dstrcat(&output_msg, user_msg);
-    convert_newlines(&output_msg);
+    convert_special_chars(&info.msg);
+    sink(&info);
+    free(info.msg);
 
-    if (output_handler) {
-        output_handler(output_msg.c_str, output_msg.len, lvl);
-    } else {
-        if (write(lfd, output_msg.c_str, output_msg.len) != (int) output_msg.len)
-            goto fail;
-    }
-
-    strncpy(last_log, output_msg.c_str, output_msg.size);
-
-    dstr_free(&output_msg);
-    errno = saved_errno;
-    return;
-
-fail:
-    dstr_free(&output_msg);
-    ++drops;
     errno = saved_errno;
     return;
 }

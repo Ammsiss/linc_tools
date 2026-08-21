@@ -80,6 +80,8 @@ static opt_data *lookup_opt_by_short_opt(opt_data *opts, char short_opt) {
 int arg_parse(int argc, char * const *argv, opt_data *opts, int flags) {
     assert(argv && opts);
 
+    optind = 0;
+
     if (flags & ARG_SILENT) {
         opterr = 0;
         print_errs = false;

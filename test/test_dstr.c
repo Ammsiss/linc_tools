@@ -1,6 +1,8 @@
 #include "unity_fixture.h"
 #include "dstr.h"
 
+/* TODO: add test for n versions of str funcs */
+
 TEST_GROUP(dstr);
 
 /************ Shared utils ************/
