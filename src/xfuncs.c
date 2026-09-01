@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <execinfo.h>
+#include <dirent.h>
 
 #include "xfuncs.h"
 
@@ -272,6 +273,14 @@ char *xstrdup_at(const site_info *site, const char *s) {
     return rv;
 }
 
+char *xstrndup_at(const site_info *site, const char *s, size_t n) {
+    char *rv = strndup(s, n);
+    if (!rv)
+        SYS_FAIL(strndup);
+
+    return rv;
+}
+
 int xsetvbuf_at(const site_info *site, FILE *stream, char *buf,
         int mode, size_t size) {
     int rv = setvbuf(stream, buf, mode, size);
@@ -281,16 +290,18 @@ int xsetvbuf_at(const site_info *site, FILE *stream, char *buf,
     return rv;
 }
 
-/*
-    int rv = ();
-    if (rv == -1) {
-        if (xfatal) {
-            xinfo info = { .site = site };
-            collect_xinfo(&info, "");
-            xfatal(&info);
-        } else
-            exit(EXIT_FAILURE);
-    }
+DIR *xopendir_at(const site_info *site, const char *name) {
+    DIR *rv = opendir(name);
+    if (!rv)
+        SYS_FAIL(opendir);
 
     return rv;
-*/
+}
+
+int xclosedir_at(const site_info *site, DIR *dirp) {
+    int rv = closedir(dirp);
+    if (rv == -1)
+        SYS_FAIL(closedir);
+
+    return rv;
+}

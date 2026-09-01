@@ -32,7 +32,8 @@
     void name##_free(name *arr); \
     type *name##_push(name *arr); \
     void name##_reserve(name *arr, size_t min); \
-    void name##_delete(name *arr, size_t remove_i);
+    void name##_delete(name *arr, size_t remove_i); \
+    type *name##_insert(name *arr, size_t insert_i);
 
 #define DA_DECLARE(_, name, type) DECLARE_DYN_ARR(name, type)
     DYN_ARR_TYPES(DA_DECLARE, _)
@@ -50,7 +51,10 @@
     DA_GET(_free, (arr))(arr)
 
 #define da_push(arr) \
-    DA_GET(_push, (arr))(arr)
+    ({ \
+        assert(arr); \
+        DA_GET(_push, (arr))(arr); \
+    })
 
 #define da_reserve(arr, size) \
     DA_GET(_reserve, (arr))(arr, size)

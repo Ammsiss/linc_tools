@@ -1,3 +1,5 @@
+#include <assert.h>
+
 #include "unity_fixture.h"
 #include "darr.h"
 

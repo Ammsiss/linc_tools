@@ -1,6 +1,7 @@
 #ifndef XFUNCS_H
 #define XFUNCS_H
 
+#include <dirent.h>
 #include <fcntl.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -141,9 +142,19 @@ int xtimerfd_settime_at(const site_info *site, int fd, int flags,
 #define xstrdup(...) xstrdup_at(&SITE, __VA_ARGS__)
 char *xstrdup_at(const site_info *site, const char *s);
 
+#define xstrndup(...) xstrndup_at(&SITE, __VA_ARGS__)
+char *xstrndup_at(const site_info *site, const char *s, size_t n);
+
 #define xsetvbuf(...) xsetvbuf_at(&SITE, __VA_ARGS__)
 int xsetvbuf_at(const site_info *site, FILE *stream, char *buf,
         int mode, size_t size);
+
+#define xopendir(...) xopendir_at(&SITE, __VA_ARGS__)
+DIR *xopendir_at(const site_info *site, const char *name);
+
+#define xclosedir(...) xclosedir_at(&SITE, __VA_ARGS__)
+int xclosedir_at(const site_info *site, DIR *dirp);
+
 /*
 #define x(...) x_at(&SITE, __VA_ARGS__)
 int x_at(const site_info *site, );

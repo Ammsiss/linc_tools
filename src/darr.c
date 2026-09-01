@@ -53,11 +53,28 @@
     void name##_delete(name *arr, size_t remove_i) { \
         assert(arr); \
         assert(remove_i < arr->size); \
+        assert(remove_i >= 0); \
         \
         for (size_t i = remove_i + 1; i < arr->size; ++i) \
             arr->data[i - 1] = arr->data[i]; \
         \
         arr->size -= 1; \
+    } \
+    \
+    type *name##_insert(name *arr, size_t insert_i) { \
+        assert(arr); \
+        assert(insert_i < arr->size); \
+        assert(insert_i >= 0); \
+        \
+        name##_reserve(arr, arr->size + 1); \
+        \
+        for (size_t i = arr->size - 2; i >= insert_i; --i) { \
+            arr->data[i + 1] = arr->data[i]; \
+            if (i == insert_i) \
+                return &arr->data[i]; \
+        } \
+        \
+        LIB_FATAL("unexpected insertion index"); \
     }
 
 #define DA_DEFINE(_, name, type) DEFINE_DYN_ARR(name, type)
