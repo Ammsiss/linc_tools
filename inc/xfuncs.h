@@ -19,11 +19,26 @@
         .line = __LINE__, \
     }
 
-#define XFILE    info->site->file
-#define XFUNC    info->site->func
-#define XLINE    info->site->line
-#define XSYSNAME info->sys_name
-#define XERRNO   info->saved_errno
+#define XFILE     info->site->file
+#define XFUNC     info->site->func
+#define XLINE     info->site->line
+#define XSYSNAME  info->sys_name
+#define XERRNO    info->saved_errno
+
+#define XARG(_type) \
+    ({ \
+        if (!g_va_ready) { \
+            va_start(g_va, info); \
+            g_va_ready = true; \
+        } \
+        va_arg(g_va, _type); \
+    })
+
+#define XARG_END() \
+    do { \
+        va_end(g_va); \
+        g_va_ready = false; \
+    } while (false)
 
 typedef enum {
     AVAIL_SID = 1,
@@ -53,12 +68,15 @@ typedef struct {
     char **backtrace;
 } xinfo;
 
+extern bool g_va_ready;
+extern va_list g_va;
+
 #define XFATAL_HANDLER(name) \
     __attribute__ ((__noreturn__)) \
-    void name(const xinfo *info [[maybe_unused]])
+    void name(const xinfo *info [[maybe_unused]], ...)
 
 __attribute__ ((__noreturn__))
-typedef void (xfatal_handler)(const xinfo *);
+typedef void (xfatal_handler)(const xinfo *, ...);
 
 void set_xfatal_handler(xfatal_handler *handler);
 
@@ -154,6 +172,18 @@ DIR *xopendir_at(const site_info *site, const char *name);
 
 #define xclosedir(...) xclosedir_at(&SITE, __VA_ARGS__)
 int xclosedir_at(const site_info *site, DIR *dirp);
+
+#define xmkdir(...) xmkdir_at(&SITE, __VA_ARGS__)
+int xmkdir_at(const site_info *site, const char *pathname, mode_t mode);
+
+#define xrmdir(...) xrmdir_at(&SITE, __VA_ARGS__)
+int xrmdir_at(const site_info *site, const char *pathname);
+
+#define xunlink(...) xunlink_at(&SITE, __VA_ARGS__)
+int xunlink_at(const site_info *site, const char *pathname);
+
+#define xchdir(...) xchdir_at(&SITE, __VA_ARGS__)
+int xchdir_at(const site_info *site, const char *pathname);
 
 /*
 #define x(...) x_at(&SITE, __VA_ARGS__)

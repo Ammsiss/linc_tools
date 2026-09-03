@@ -50,6 +50,8 @@ typedef void (llog_sink)(const llog_info *);
 
 void llog_set_sink(llog_sink *sink);
 void llog_reset(void);
+
+__attribute__ ((__format__(printf, 3, 4)))
 void llog_log(llog_lvl lvl, const llog_site_info *site, const char *fmt, ...);
 
 #endif

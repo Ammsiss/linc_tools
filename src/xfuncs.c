@@ -1,5 +1,6 @@
 #define _GNU_SOURCE
 
+#include <sys/stat.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
@@ -14,12 +15,15 @@
 
 #define BT_BUF_SIZE 100
 
-#define SYS_FAIL(_sys_name) \
+bool g_va_ready;
+va_list g_va;
+
+#define SYS_FAIL(_sys_name, ...) \
     do { \
         if (xfatal) { \
             xinfo info = { .site = site }; \
             collect_xinfo(&info, #_sys_name); \
-            xfatal(&info); \
+            xfatal(&info __VA_OPT__(,) __VA_ARGS__); \
         } else \
             exit(EXIT_FAILURE); \
     } while (false)
@@ -71,7 +75,7 @@ int xopen_at(const site_info *site, const char *pathname, int flags, ...) {
 
     int rv = open(pathname, flags, mode);
     if (rv == -1)
-        SYS_FAIL(open);
+        SYS_FAIL(open, pathname, flags);
 
     return rv;
 }
@@ -79,7 +83,7 @@ int xopen_at(const site_info *site, const char *pathname, int flags, ...) {
 int xdup2_at(const site_info *site, int oldfd, int newfd) {
     int rv = dup2(oldfd, newfd);
     if (rv == -1)
-        SYS_FAIL(dup2);
+        SYS_FAIL(dup2, oldfd, newfd);
 
     return rv;
 }
@@ -87,7 +91,7 @@ int xdup2_at(const site_info *site, int oldfd, int newfd) {
 int xclose_at(const site_info *site, int fd) {
     int rv = close(fd);
     if (rv == -1)
-        SYS_FAIL(close);
+        SYS_FAIL(close, fd);
 
     return rv;
 }
@@ -95,7 +99,7 @@ int xclose_at(const site_info *site, int fd) {
 void *xmalloc_at(const site_info *site, int size) {
     void *rv = malloc(size);
     if (!rv)
-        SYS_FAIL(malloc);
+        SYS_FAIL(malloc, size);
 
     return rv;
 }
@@ -103,7 +107,7 @@ void *xmalloc_at(const site_info *site, int size) {
 void *xcalloc_at(const site_info *site, size_t nmemb, size_t size) {
     void *rv = calloc(nmemb, size);
     if (!rv)
-        SYS_FAIL(calloc);
+        SYS_FAIL(calloc, nmemb, size);
 
     return rv;
 }
@@ -111,7 +115,7 @@ void *xcalloc_at(const site_info *site, size_t nmemb, size_t size) {
 void *xrealloc_at(const site_info *site, void *ptr, int size) {
     void *rv = realloc(ptr, size);
     if (!rv)
-        SYS_FAIL(realloc);
+        SYS_FAIL(realloc, ptr, size);
 
     return rv;
 }
@@ -120,7 +124,7 @@ int xsigaction_at(const site_info *site, int signum,
         const struct sigaction *act, struct sigaction *oldact) {
     int rv = sigaction(signum, act, oldact);
     if (rv == -1)
-        SYS_FAIL(sigaction);
+        SYS_FAIL(sigaction, signum, act, oldact);
 
     return rv;
 }
@@ -128,7 +132,7 @@ int xsigaction_at(const site_info *site, int signum,
 int xsigemptyset_at(const site_info *site, sigset_t *set) {
     int rv = sigemptyset(set);
     if (rv == -1)
-        SYS_FAIL(sigemptyset);
+        SYS_FAIL(sigemptyset, set);
 
     return rv;
 }
@@ -136,7 +140,7 @@ int xsigemptyset_at(const site_info *site, sigset_t *set) {
 int xsigaddset_at(const site_info *site, sigset_t *set, int signum) {
     int rv = sigaddset(set, signum);
     if (rv == -1)
-        SYS_FAIL(sigaddset);
+        SYS_FAIL(sigaddset, set, signum);
 
     return rv;
 }
@@ -144,7 +148,7 @@ int xsigaddset_at(const site_info *site, sigset_t *set, int signum) {
 int xsigdelset_at(const site_info *site, sigset_t *set, int signum) {
     int rv = sigdelset(set, signum);
     if (rv == -1)
-        SYS_FAIL(sigdelset);
+        SYS_FAIL(sigdelset, set, signum);
 
     return rv;
 }
@@ -153,7 +157,7 @@ int xsigprocmask_at(const site_info *site, int how, const sigset_t *set,
         sigset_t *oldset) {
     int rv = sigprocmask(how, set, oldset);
     if (rv == -1)
-        SYS_FAIL(sigprocmask);
+        SYS_FAIL(sigprocmask, how, set, oldset);
 
     return rv;
 }
@@ -161,7 +165,7 @@ int xsigprocmask_at(const site_info *site, int how, const sigset_t *set,
 int xsetpgid_at(const site_info *site, pid_t pid, pid_t pgid) {
     int rv = setpgid(pid, pgid);
     if (rv == -1)
-        SYS_FAIL(setpgid);
+        SYS_FAIL(setpgid, pid, pgid);
 
     return rv;
 }
@@ -169,7 +173,7 @@ int xsetpgid_at(const site_info *site, pid_t pid, pid_t pgid) {
 int xtcsetpgrp_at(const site_info *site, int fd, pid_t pgrp) {
     int rv = tcsetpgrp(fd, pgrp);
     if (rv == -1)
-        SYS_FAIL(tcsetpgrp);
+        SYS_FAIL(tcsetpgrp, fd, pgrp);
 
     return rv;
 }
@@ -177,7 +181,7 @@ int xtcsetpgrp_at(const site_info *site, int fd, pid_t pgrp) {
 char *xgetcwd_at(const site_info *site, char *buf, size_t size) {
     char *rv = getcwd(buf, size);
     if (!rv)
-        SYS_FAIL(getcwd);
+        SYS_FAIL(getcwd, buf, size);
 
     return rv;
 }
@@ -185,7 +189,7 @@ char *xgetcwd_at(const site_info *site, char *buf, size_t size) {
 int xkill_at(const site_info *site, pid_t pid, int sig) {
     int rv = kill(pid, sig);
     if (rv == -1)
-        SYS_FAIL(kill);
+        SYS_FAIL(kill, pid, sig);
 
     return rv;
 }
@@ -193,7 +197,7 @@ int xkill_at(const site_info *site, pid_t pid, int sig) {
 int xatexit_at(const site_info *site, void (*function)(void)) {
     int rv = atexit(function);
     if (rv == -1)
-        SYS_FAIL(atexit);
+        SYS_FAIL(atexit, function);
 
     return rv;
 }
@@ -201,7 +205,7 @@ int xatexit_at(const site_info *site, void (*function)(void)) {
 int xpipe_at(const site_info *site, int pipefd[2]) {
     int rv = pipe(pipefd);
     if (rv == -1)
-        SYS_FAIL(pipe);
+        SYS_FAIL(pipe, pipefd);
 
     return rv;
 }
@@ -209,7 +213,7 @@ int xpipe_at(const site_info *site, int pipefd[2]) {
 int xpipe2_at(const site_info *site, int pipefd[2], int flags) {
     int rv = pipe2(pipefd, flags);
     if (rv == -1)
-        SYS_FAIL(pipe2);
+        SYS_FAIL(pipe2, pipefd, flags);
 
     return rv;
 }
@@ -225,7 +229,7 @@ int xfork_at(const site_info *site) {
 int xtcgetattr_at(const site_info *site, int fd, struct termios *tio) {
     int rv = tcgetattr(fd, tio);
     if (rv == -1)
-        SYS_FAIL(tcgetattr);
+        SYS_FAIL(tcgetattr, fd, tio);
 
     return rv;
 }
@@ -234,7 +238,7 @@ int xforkpty_at(const site_info *site, int *amaster, char *name,
         const struct termios *tio, const struct winsize *winp) {
     int rv = forkpty(amaster, name, tio, winp);
     if (rv == -1)
-        SYS_FAIL(forkpty);
+        SYS_FAIL(forkpty, amaster, name, tio, winp);
 
     return rv;
 }
@@ -243,7 +247,7 @@ int xpoll_at(const site_info *site, struct pollfd *fds, nfds_t nfds,
         int timeout) {
     int rv = poll(fds, nfds, timeout);
     if (rv == -1)
-        SYS_FAIL(poll);
+        SYS_FAIL(poll, fds, nfds, timeout);
 
     return rv;
 }
@@ -251,7 +255,7 @@ int xpoll_at(const site_info *site, struct pollfd *fds, nfds_t nfds,
 int xtimerfd_create_at(const site_info *site, int clockid, int flags) {
     int rv = timerfd_create(clockid, flags);
     if (rv == -1)
-        SYS_FAIL(timerfd_create);
+        SYS_FAIL(timerfd_create, clockid, flags);
 
     return rv;
 }
@@ -260,7 +264,7 @@ int xtimerfd_settime_at(const site_info *site, int fd, int flags,
         const struct itimerspec *new_value, struct itimerspec *old_value) {
     int rv = timerfd_settime(fd, flags, new_value, old_value);
     if (rv == -1)
-        SYS_FAIL(timerfd_settime);
+        SYS_FAIL(timerfd_settime, fd, flags, new_value, old_value);
 
     return rv;
 }
@@ -268,7 +272,7 @@ int xtimerfd_settime_at(const site_info *site, int fd, int flags,
 char *xstrdup_at(const site_info *site, const char *s) {
     char *rv = strdup(s);
     if (!rv)
-        SYS_FAIL(strdup);
+        SYS_FAIL(strdup, s);
 
     return rv;
 }
@@ -276,7 +280,7 @@ char *xstrdup_at(const site_info *site, const char *s) {
 char *xstrndup_at(const site_info *site, const char *s, size_t n) {
     char *rv = strndup(s, n);
     if (!rv)
-        SYS_FAIL(strndup);
+        SYS_FAIL(strndup, s, n);
 
     return rv;
 }
@@ -285,7 +289,7 @@ int xsetvbuf_at(const site_info *site, FILE *stream, char *buf,
         int mode, size_t size) {
     int rv = setvbuf(stream, buf, mode, size);
     if (rv != 0)
-        SYS_FAIL(setvbuf);
+        SYS_FAIL(setvbuf, stream, buf, mode, size);
 
     return rv;
 }
@@ -293,7 +297,7 @@ int xsetvbuf_at(const site_info *site, FILE *stream, char *buf,
 DIR *xopendir_at(const site_info *site, const char *name) {
     DIR *rv = opendir(name);
     if (!rv)
-        SYS_FAIL(opendir);
+        SYS_FAIL(opendir, name, name);
 
     return rv;
 }
@@ -301,7 +305,39 @@ DIR *xopendir_at(const site_info *site, const char *name) {
 int xclosedir_at(const site_info *site, DIR *dirp) {
     int rv = closedir(dirp);
     if (rv == -1)
-        SYS_FAIL(closedir);
+        SYS_FAIL(closedir, dirp);
+
+    return rv;
+}
+
+int xmkdir_at(const site_info *site, const char *pathname, mode_t mode) {
+    int rv = mkdir(pathname, mode);
+    if (rv == -1)
+        SYS_FAIL(mkdir, pathname, mode);
+
+    return rv;
+}
+
+int xrmdir_at(const site_info *site, const char *pathname) {
+    int rv = rmdir(pathname);
+    if (rv == -1)
+        SYS_FAIL(rmdir, pathname);
+
+    return rv;
+}
+
+int xunlink_at(const site_info *site, const char *pathname) {
+    int rv = unlink(pathname);
+    if (rv == -1)
+        SYS_FAIL(unlink, pathname);
+
+    return rv;
+}
+
+int xchdir_at(const site_info *site, const char *pathname) {
+    int rv = chdir(pathname);
+    if (rv == -1)
+        SYS_FAIL(chdir, pathname);
 
     return rv;
 }

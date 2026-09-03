@@ -1,0 +1,8 @@
+- [ ] Add darr.c wrappers for q sorts
+- [ ] use man 3 backtrace to upgrade logs
+- [ ] make a file io utilities lib, for opening files, temps, etc
+- [ ] Add map to linc_tools
+- [ ] Add generic allocator interface to linc_tools
+- [ ] Add Arena allocater to linc_tools
+- [ ] Add linked list module to linc_tools
+- [ ] Add a way to cal lthe xfatal function without needing to use a xmacro
