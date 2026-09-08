@@ -5,6 +5,7 @@ void run_all(void) {
     RUN_TEST_GROUP(args);
     RUN_TEST_GROUP(dstr);
     RUN_TEST_GROUP(darr);
+    RUN_TEST_GROUP(termsplit);
 }
 
 int main(int argc, const char **argv) {

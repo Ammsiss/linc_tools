@@ -14,6 +14,7 @@ CFLAGS := -g -O0 -Wall -Wextra -std=gnu23
 CPPFLAGS := -I. -Iinc -I$(USRC_DIR) -I$(TEST_DIR)
 DFLAGS := -DUNITY_OUTPUT_COLOR -DUNITY_FIXTURE_NO_EXTRAS
 DEPFLAGS := -MMD -MP
+LDFLAGS :=
 
 SRCS := $(wildcard $(SRC_DIR)/*.c)
 SRCS += $(wildcard $(TEST_DIR)/*.c)
@@ -28,7 +29,7 @@ COMP_FLAGS := $(CFLAGS) $(CPPFLAGS) $(DFLAGS) $(DEPFLAGS)
 all: $(BIN)
 
 $(BIN): $(OBJS)
-	$(CC) $(COMP_FLAGS) $^ -o $@
+	$(CC) $(COMP_FLAGS) $(LDFLAGS) $^ -o $@
 
 $(BLD_DIR)/%.o: %.c
 	mkdir -p $(dir $@)
