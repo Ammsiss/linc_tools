@@ -234,6 +234,17 @@ int xtcgetattr_at(const site_info *site, int fd, struct termios *tio) {
     return rv;
 }
 
+int xtcsetattr_at(const site_info *site, int fd, int optional_actions,
+        const struct termios *termios_p)
+{
+    int rv = tcsetattr(fd, optional_actions, termios_p);
+    if (rv == -1)
+        SYS_FAIL(tcsetattr, fd, optional_actions, termios_p);
+
+    return rv;
+}
+
+
 int xforkpty_at(const site_info *site, int *amaster, char *name,
         const struct termios *tio, const struct winsize *winp) {
     int rv = forkpty(amaster, name, tio, winp);

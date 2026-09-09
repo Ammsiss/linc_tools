@@ -6,12 +6,12 @@
 
 #define TS_MOVED 1
 #define TS_RESIZED 2
-#define TS_MAX_CHILD 100
+#define TS_NODE_CHILD_MAX 100
 
 typedef struct ts_node ts_node;
 typedef struct ts_rect ts_rect;
+typedef int (ts_init_fn)(ts_node *node);
 typedef void (ts_resize_fn)(ts_node *node, uint32_t flags);
-typedef void (ts_init_fn)(ts_node *node);
 typedef void (ts_free_fn)(ts_node *node);
 
 typedef enum {
@@ -32,7 +32,7 @@ typedef enum {
     TS_QUAD_GT,
     TS_QUAD_GB,
     TS_QUAD_GJ,
-    TS_QUAD_MAX,
+    TS_QUAD_CHILD_MAX,
 } ts_quad_child;
 
 typedef enum {
@@ -55,6 +55,14 @@ typedef struct {
     ts_node *gap;
 } ts_split_config;
 
+typedef struct {
+    float ratio_y;
+    float ratio_x;
+    int quad_gap;
+    ts_node *tl, *tr, *bl, *br;
+    ts_node *gl, *gr, *gt, *gb, *gj;
+} ts_quad_config;
+
 struct ts_vec {
     int y;
     int x;
@@ -75,7 +83,7 @@ struct ts_node {
         /* container */
         struct {
             size_t child_n;
-            ts_node *children[TS_MAX_CHILD];
+            ts_node *children[TS_NODE_CHILD_MAX];
 
             union {
                 /* split */
@@ -105,9 +113,10 @@ struct ts_node {
     };
 };
 
+ts_node *ts_new_quad(ts_quad_config cfg);
 ts_node *ts_new_split(ts_split_config cfg);
-
 ts_node *ts_new_leaf(ts_init_fn *init, ts_resize_fn *resize, ts_free_fn *free);
+
 void ts_refresh(ts_node *node, ts_rect rect);
 void ts_free(ts_node *node);
 

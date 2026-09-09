@@ -142,6 +142,10 @@ int xfork_at(const site_info *site);
 #define xtcgetattr(...) xtcgetattr_at(&SITE, __VA_ARGS__)
 int xtcgetattr_at(const site_info *site, int fd, struct termios *tio);
 
+#define xtcsetattr(...) xtcsetattr_at(&SITE, __VA_ARGS__)
+int xtcsetattr_at(const site_info *site, int fd, int optional_actions,
+        const struct termios *termios_p);
+
 #define xforkpty(...) xforkpty_at(&SITE, __VA_ARGS__)
 int xforkpty_at(const site_info *site, int *amaster, char *name,
         const struct termios *tio, const struct winsize *winp);
@@ -184,10 +188,5 @@ int xunlink_at(const site_info *site, const char *pathname);
 
 #define xchdir(...) xchdir_at(&SITE, __VA_ARGS__)
 int xchdir_at(const site_info *site, const char *pathname);
-
-/*
-#define x(...) x_at(&SITE, __VA_ARGS__)
-int x_at(const site_info *site, );
-*/
 
 #endif
