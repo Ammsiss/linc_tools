@@ -1,5 +1,3 @@
-MAKEFLAGS += --silent
-
 BIN := test_all
 BLD_DIR := build
 COMPCOM := compile_commands.json
@@ -10,13 +8,14 @@ USRC_DIR := unity
 
 CC := clang
 
-CFLAGS := -g -O0 -Wall -Wextra -std=gnu23
-CPPFLAGS := -I. -Iinc -I$(USRC_DIR) -I$(TEST_DIR)
+CFLAGS := -g -O0 -std=gnu23 -Wall -Wextra -fcolor-diagnostics
+CPPFLAGS := -I. -Iinc -I$(USRC_DIR) -I$(TEST_DIR) -Iinc/partty
 DFLAGS := -DUNITY_OUTPUT_COLOR -DUNITY_FIXTURE_NO_EXTRAS
 DEPFLAGS := -MMD -MP
-LDFLAGS :=
+LDFLAGS := -lunibilium
 
 SRCS := $(wildcard $(SRC_DIR)/*.c)
+SRCS += $(wildcard $(SRC_DIR)/partty/*.c)
 SRCS += $(wildcard $(TEST_DIR)/*.c)
 SRCS += $(wildcard $(USRC_DIR)/*.c)
 
