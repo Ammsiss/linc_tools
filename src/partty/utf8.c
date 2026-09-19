@@ -112,10 +112,8 @@ static int utf8_decode(uint8_t *bytes, size_t n, utf8_decode_info *info) {
             sequence_pending = false;
 
             uint32_t cp = utf8_decode_bytes(bytes, ++used);
-            if (cp == (uint32_t)-1) {
-                printf("utf8_decode_bytes failed\n");
+            if (cp == (uint32_t)-1)
                 goto fail;
-            }
 
             info->codepoint = cp;
             info->status = UTF8_DECODE_OK;
