@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "headarr.h"
+#include "hda.h"
 #include "common.h"
 
 #define MAX(a, b) \
@@ -18,34 +18,34 @@
 #define HEADARR_CAP(arr) \
     (HEADARR_START(arr)[1])
 
-size_t *hdr_start(void *arr) {
+size_t *hda_start(void *arr) {
     return (arr) ? HEADARR_START(arr) : NULL;
 }
 
-size_t hdr_size(void *arr) {
+size_t hda_size(void *arr) {
     return (arr) ? HEADARR_SIZE(arr) : 0;
 }
 
-size_t hdr_cap(void *arr) {
+size_t hda_cap(void *arr) {
     return (arr) ? HEADARR_CAP(arr) : 0;
 }
 
-void hdr_free(void *arr) {
+void hda_free(void *arr) {
     if (!arr)
         return;
 
     free(HEADARR_START(arr));
 }
 
-static void *hdr_reserve(void *arr, size_t el_sz, size_t min) {
-    size_t cap = hdr_cap(arr);
+static void *hda_reserve(void *arr, size_t el_sz, size_t min) {
+    size_t cap = hda_cap(arr);
 
     if (cap >= min)
         return arr;
 
     cap = MAX(min, MAX(2, cap * 2));
 
-    void *tmp = realloc(hdr_start(arr), HEADARR_BYTE_N + (cap * el_sz));
+    void *tmp = realloc(hda_start(arr), HEADARR_BYTE_N + (cap * el_sz));
     if (!tmp)
         LIB_FATAL("realloc: out of memory");
 
@@ -55,33 +55,33 @@ static void *hdr_reserve(void *arr, size_t el_sz, size_t min) {
     return arr;
 }
 
-void *hdr_last_imp(void *arr, size_t el_sz) {
-    if (hdr_size(arr) == 0)
+void *hda_last_imp(void *arr, size_t el_sz) {
+    if (hda_size(arr) == 0)
         return NULL;
 
     char *p = arr;
-    return &p[(hdr_size(arr) - 1) * el_sz];
+    return &p[(hda_size(arr) - 1) * el_sz];
 }
 
-void *hdr_grow(void *arr, size_t el_sz, size_t n) {
-    size_t size = hdr_size(arr);
+void *hda_grow(void *arr, size_t el_sz, size_t n) {
+    size_t size = hda_size(arr);
 
-    arr = hdr_reserve(arr, el_sz, size + n);
+    arr = hda_reserve(arr, el_sz, size + n);
     HEADARR_SIZE(arr) = size + n;
 
     return arr;
 }
 
-void *hdr_insert_imp(void *arr, void *el, size_t el_sz, size_t idx, size_t n) {
+void *hda_insert_imp(void *arr, void *el, size_t el_sz, size_t idx, size_t n) {
     assert(el);
     assert(el_sz > 0);
-    assert(idx <= hdr_size(arr));
+    assert(idx <= hda_size(arr));
 
     if (n == 0)
         return arr;
 
-    size_t size = hdr_size(arr);
-    arr = hdr_grow(arr, el_sz, n);
+    size_t size = hda_size(arr);
+    arr = hda_grow(arr, el_sz, n);
 
     char *p = arr;
     memmove(&p[(idx + n) * el_sz], &p[idx * el_sz], (size - idx) * el_sz);
@@ -93,9 +93,9 @@ void *hdr_insert_imp(void *arr, void *el, size_t el_sz, size_t idx, size_t n) {
     return arr;
 }
 
-void hdr_delete_imp(void *arr, size_t el_sz, size_t index, size_t n) {
+void hda_delete_imp(void *arr, size_t el_sz, size_t index, size_t n) {
     assert(el_sz > 0);
-    assert(index + n <= hdr_size(arr));
+    assert(index + n <= hda_size(arr));
 
     if (n == 0)
         return;

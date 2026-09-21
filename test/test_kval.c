@@ -78,9 +78,9 @@ TEST(kval, delete_non_existant_key) {
     kv = kv_create(sizeof(int), sizeof(int));
     kv_add(kv, 1, 1);
 
-    TEST_ASSERT_EQUAL_size_t(1, hdr_size(kv->pairs));
+    TEST_ASSERT_EQUAL_size_t(1, hda_size(kv->pairs));
     TEST_ASSERT_EQUAL_INT(0, kv_delete(kv, 2));
-    TEST_ASSERT_EQUAL_size_t(1, hdr_size(kv->pairs));
+    TEST_ASSERT_EQUAL_size_t(1, hda_size(kv->pairs));
 }
 
 TEST(kval, set_existing_key_to_new_value) {
@@ -88,7 +88,7 @@ TEST(kval, set_existing_key_to_new_value) {
     kv_add(kv, 1, 1);
     kv_set(kv, 1, 2);
 
-    TEST_ASSERT_EQUAL_size_t(1, hdr_size(kv->pairs));
+    TEST_ASSERT_EQUAL_size_t(1, hda_size(kv->pairs));
     TEST_ASSERT_EQUAL_INT(2, *(int *)kv_lookup(kv, 1));
 }
 

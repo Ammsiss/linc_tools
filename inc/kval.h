@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 
-#include "headarr.h" // IWYU pragma: export
+#include "hda.h" // IWYU pragma: export
 
 typedef struct {
     void *k;
@@ -19,7 +19,7 @@ typedef struct {
 typedef void *(* k_fn)(kval *, const void *);
 
 #define kv_foreach(kv, x) \
-    for (size_t i = 0; i < hdr_size(kv->pairs); ++i) if ((x = kv->pairs + i))
+    for (size_t i = 0; i < hda_size(kv->pairs); ++i) if ((x = kv->pairs + i))
 
 #define kv_add(kv, k, v) \
     _Generic(k, \

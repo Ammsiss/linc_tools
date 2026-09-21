@@ -3,10 +3,10 @@
 
 #include "kval.h"
 #include "common.h"
-#include "headarr.h"
+#include "hda.h"
 
 static void *lookup_idx(kval *kv, void *k, size_t *idx) {
-    for (size_t i = 0; i < hdr_size(kv->pairs); ++i) {
+    for (size_t i = 0; i < hda_size(kv->pairs); ++i) {
 
         if (memcmp(k, kv->pairs[i].k, kv->k_sz) == 0) {
             if (idx)
@@ -26,7 +26,7 @@ int kv_add_imp(kval *kv, void *k, void *v, k_fn fn) {
         return -1;
     }
 
-    kvp *el = hdr_push(kv->pairs, { canon_k, nullptr });
+    kvp *el = hda_push(kv->pairs, { canon_k, nullptr });
 
     el->v = malloc(kv->v_sz);
     if (!el->v)
@@ -44,10 +44,10 @@ int kv_set_imp(kval *kv, void *k, void *v, k_fn fn) {
     if (lookup_idx(kv, canon_k, &idx)) {
         free(kv->pairs[idx].k);
         free(kv->pairs[idx].v);
-        hdr_delete(kv->pairs, idx, 1);
+        hda_delete(kv->pairs, idx, 1);
     }
 
-    kvp *el = hdr_push(kv->pairs, { canon_k, nullptr });
+    kvp *el = hda_push(kv->pairs, { canon_k, nullptr });
 
     el->v = malloc(kv->v_sz);
     if (!el->v)
@@ -85,7 +85,7 @@ int kv_delete_imp(kval *kv, void *k, k_fn fn) {
 
     free(kv->pairs[idx].k);
     free(kv->pairs[idx].v);
-    hdr_delete(kv->pairs, idx, 1);
+    hda_delete(kv->pairs, idx, 1);
 
     free(canon_k);
     return 0;
@@ -128,11 +128,11 @@ kval *kv_create(size_t k_sz, size_t v_sz) {
 }
 
 void kv_free(kval *kv) {
-    for (size_t i = 0; i < hdr_size(kv->pairs); ++i) {
+    for (size_t i = 0; i < hda_size(kv->pairs); ++i) {
         free(kv->pairs[i].k);
         free(kv->pairs[i].v);
     }
 
-    hdr_free(kv->pairs);
+    hda_free(kv->pairs);
     free(kv);
 }
