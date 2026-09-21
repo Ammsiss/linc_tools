@@ -1,6 +1,8 @@
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include "hda.h"
 #include "common.h"
 
@@ -18,92 +20,104 @@
 #define HDA_CAP(arr) \
     (HDA_START(arr)[1])
 
-size_t *hda_start(void *arr) {
-    return (arr) ? HDA_START(arr) : NULL;
+size_t *hda_start(const void *hda) {
+    return (hda) ? HDA_START(hda) : NULL;
 }
 
-size_t hda_size(void *arr) {
-    return (arr) ? HDA_SIZE(arr) : 0;
+size_t hda_size(const void *hda) {
+    return (hda) ? HDA_SIZE(hda) : 0;
 }
 
-size_t hda_cap(void *arr) {
-    return (arr) ? HDA_CAP(arr) : 0;
+size_t hda_cap(const void *hda) {
+    return (hda) ? HDA_CAP(hda) : 0;
 }
 
-void hda_free(void *arr) {
-    if (!arr)
+void hda_free(void *hda) {
+    if (!hda)
         return;
 
-    free(HDA_START(arr));
+    free(HDA_START(hda));
 }
 
-static void *hda_reserve(void *arr, size_t el_sz, size_t min) {
-    size_t cap = hda_cap(arr);
+static void *hda_reserve(void *hda, size_t el_sz, size_t min) {
+    size_t cap = hda_cap(hda);
 
     if (cap >= min)
-        return arr;
+        return hda;
 
     cap = MAX(min, MAX(2, cap * 2));
 
-    void *tmp = realloc(hda_start(arr), HDA_BYTE_N + (cap * el_sz));
+    void *tmp = realloc(hda_start(hda), HDA_BYTE_N + (cap * el_sz));
     if (!tmp)
         LIB_FATAL("realloc: out of memory");
 
-    arr = (char *)tmp + HDA_BYTE_N;
-    HDA_CAP(arr) = cap;
+    hda = (char *)tmp + HDA_BYTE_N;
+    HDA_CAP(hda) = cap;
 
-    return arr;
+    return hda;
 }
 
-void *hda_last_imp(void *arr, size_t el_sz) {
-    if (hda_size(arr) == 0)
+void *hda_last_imp(void *hda, size_t el_sz) {
+    if (hda_size(hda) == 0)
         return NULL;
 
-    char *p = arr;
-    return &p[(hda_size(arr) - 1) * el_sz];
+    char *p = hda;
+    return &p[(hda_size(hda) - 1) * el_sz];
 }
 
-void *hda_grow(void *arr, size_t el_sz, size_t n) {
-    size_t size = hda_size(arr);
+void *hda_grow(void *hda, size_t el_sz, size_t n) {
+    size_t size = hda_size(hda);
 
-    arr = hda_reserve(arr, el_sz, size + n);
-    HDA_SIZE(arr) = size + n;
+    hda = hda_reserve(hda, el_sz, size + n);
+    HDA_SIZE(hda) = size + n;
 
-    return arr;
+    return hda;
 }
 
-void *hda_insert_imp(void *arr, void *el, size_t el_sz, size_t idx, size_t n) {
-    assert(el);
+void *hda_insert_imp(void *hda, const void *els, size_t el_sz, size_t idx,
+        size_t n)
+{
+    assert(els);
     assert(el_sz > 0);
-    assert(idx <= hda_size(arr));
+    assert(idx <= hda_size(hda));
 
     if (n == 0)
-        return arr;
+        return hda;
 
-    size_t size = hda_size(arr);
-    arr = hda_grow(arr, el_sz, n);
+    if (n > SIZE_MAX / el_sz)
+        LIB_FATAL("allocation overflow");
 
-    char *p = arr;
+    /* to guard against overlapping hda and el on realloc.
+     * Can avoid the malloc on every insert by checking for
+     * address overlap (uintptr_t) */
+    void *el_copy = malloc(el_sz * n);
+    if (!el_copy)
+        LIB_FATAL("malloc: out of memory");
+
+    memcpy(el_copy, els, el_sz * n);
+
+    size_t size = hda_size(hda);
+    hda = hda_grow(hda, el_sz, n);
+
+    char *p = hda;
     memmove(&p[(idx + n) * el_sz], &p[idx * el_sz], (size - idx) * el_sz);
+    memcpy(&p[idx * el_sz], el_copy, el_sz * n);
 
-    char *el_p = el;
-    for (size_t i = 0; i < n; ++i)
-        memcpy(&p[(idx + i) * el_sz], &el_p[i * el_sz], el_sz);
-
-    return arr;
+    free(el_copy);
+    return hda;
 }
 
-void hda_delete_imp(void *arr, size_t el_sz, size_t index, size_t n) {
+void hda_delete_imp(void *hda, size_t el_sz, size_t index, size_t n) {
     assert(el_sz > 0);
-    assert(index + n <= hda_size(arr));
+    assert(index + n <= hda_size(hda));
 
     if (n == 0)
         return;
 
-    char *p = arr;
-    size_t shift_n = HDA_SIZE(arr) - (index + n);
+    char *p = hda;
+    size_t shift_n = HDA_SIZE(hda) - (index + n);
 
     memmove(&p[index * el_sz], &p[(index + n) * el_sz], shift_n * el_sz);
 
-    HDA_SIZE(arr) -= n;
+    HDA_SIZE(hda) -= n;
 }

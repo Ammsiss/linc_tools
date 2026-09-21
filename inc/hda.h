@@ -4,32 +4,32 @@
 #include <assert.h>
 #include <stddef.h>
 
-#define EL_SZ(arr) \
-    sizeof(*(arr))
+#define EL_SZ(hda) \
+    sizeof(*(hda))
 
-#define hda_push(arr, ...) \
+#define hda_push(hda, ...) \
     ({ \
-            arr = hda_grow(arr, EL_SZ(arr), 1); \
-            *hda_last(arr) = (typeof(*(arr)))__VA_ARGS__; \
-            hda_last(arr); \
+        hda = hda_grow(hda, EL_SZ(hda), 1); \
+        *hda_last(hda) = (typeof(*(hda)))__VA_ARGS__; \
+        hda_last(hda); \
     })
 
-#define hda_insert(arr, index, n, ...) \
-    arr = hda_insert_imp(arr, (typeof(*arr)[])__VA_ARGS__, EL_SZ(arr), index, n)
+#define hda_insert(hda, index, n, ...) \
+    hda = hda_insert_imp(hda, (typeof(*hda)[])__VA_ARGS__, EL_SZ(hda), index, n)
 
-#define hda_delete(arr, index, n) \
-    hda_delete_imp(arr, EL_SZ(arr), index, n)
+#define hda_delete(hda, index, n) \
+    hda_delete_imp(hda, EL_SZ(hda), index, n)
 
-#define hda_last(arr) \
-    ((typeof(arr))hda_last_imp(arr, EL_SZ(arr)))
+#define hda_last(hda) \
+    ((typeof(hda))hda_last_imp(hda, EL_SZ(hda)))
 
-size_t hda_size(void *arr);
-size_t hda_cap(void *arr);
+size_t hda_size(const void *hda);
+size_t hda_cap(const void *hda);
 
-void hda_free(void *arr);
-void *hda_grow(void *arr, size_t el_sz, size_t n);
-void *hda_insert_imp(void *arr, void *el, size_t el_sz, size_t idx, size_t n);
-void hda_delete_imp(void *arr_p, size_t el_sz, size_t idx, size_t n);
-void *hda_last_imp(void *arr, size_t el_sz);
+void hda_free(void *hda);
+void *hda_grow(void *hda, size_t el_sz, size_t n);
+void *hda_insert_imp(void *hda, const void *els, size_t el_sz, size_t idx, size_t n);
+void hda_delete_imp(void *hda, size_t el_sz, size_t idx, size_t n);
+void *hda_last_imp(void *hda, size_t el_sz);
 
 #endif
