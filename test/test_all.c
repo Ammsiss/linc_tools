@@ -8,6 +8,7 @@ void run_all(void) {
     RUN_TEST_GROUP(termsplit);
     RUN_TEST_GROUP(partty);
     RUN_TEST_GROUP(headarr);
+    RUN_TEST_GROUP(kval);
 }
 
 int main(int argc, const char **argv) {

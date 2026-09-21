@@ -8,10 +8,11 @@
     sizeof(*(arr))
 
 #define hdr_push(arr, ...) \
-    do { \
-        arr = hdr_grow(arr, EL_SZ(arr), 1); \
-        *hdr_last(arr) = (typeof(*(arr)))__VA_ARGS__; \
-    } while (false)
+    ({ \
+            arr = hdr_grow(arr, EL_SZ(arr), 1); \
+            *hdr_last(arr) = (typeof(*(arr)))__VA_ARGS__; \
+            hdr_last(arr); \
+    })
 
 #define hdr_insert(arr, index, n, ...) \
     arr = hdr_insert_imp(arr, (typeof(*arr)[])__VA_ARGS__, EL_SZ(arr), index, n)
