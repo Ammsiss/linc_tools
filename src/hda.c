@@ -7,34 +7,34 @@
 #define MAX(a, b) \
     (((a) > (b)) ? a : b)
 
-#define HEADARR_BYTE_N (2 * sizeof(size_t))
+#define HDA_BYTE_N (2 * sizeof(size_t))
 
-#define HEADARR_START(arr) \
-    ((size_t *)((char *)(arr) - HEADARR_BYTE_N))
+#define HDA_START(arr) \
+    ((size_t *)((char *)(arr) - HDA_BYTE_N))
 
-#define HEADARR_SIZE(arr) \
-    (HEADARR_START(arr)[0])
+#define HDA_SIZE(arr) \
+    (HDA_START(arr)[0])
 
-#define HEADARR_CAP(arr) \
-    (HEADARR_START(arr)[1])
+#define HDA_CAP(arr) \
+    (HDA_START(arr)[1])
 
 size_t *hda_start(void *arr) {
-    return (arr) ? HEADARR_START(arr) : NULL;
+    return (arr) ? HDA_START(arr) : NULL;
 }
 
 size_t hda_size(void *arr) {
-    return (arr) ? HEADARR_SIZE(arr) : 0;
+    return (arr) ? HDA_SIZE(arr) : 0;
 }
 
 size_t hda_cap(void *arr) {
-    return (arr) ? HEADARR_CAP(arr) : 0;
+    return (arr) ? HDA_CAP(arr) : 0;
 }
 
 void hda_free(void *arr) {
     if (!arr)
         return;
 
-    free(HEADARR_START(arr));
+    free(HDA_START(arr));
 }
 
 static void *hda_reserve(void *arr, size_t el_sz, size_t min) {
@@ -45,12 +45,12 @@ static void *hda_reserve(void *arr, size_t el_sz, size_t min) {
 
     cap = MAX(min, MAX(2, cap * 2));
 
-    void *tmp = realloc(hda_start(arr), HEADARR_BYTE_N + (cap * el_sz));
+    void *tmp = realloc(hda_start(arr), HDA_BYTE_N + (cap * el_sz));
     if (!tmp)
         LIB_FATAL("realloc: out of memory");
 
-    arr = (char *)tmp + HEADARR_BYTE_N;
-    HEADARR_CAP(arr) = cap;
+    arr = (char *)tmp + HDA_BYTE_N;
+    HDA_CAP(arr) = cap;
 
     return arr;
 }
@@ -67,7 +67,7 @@ void *hda_grow(void *arr, size_t el_sz, size_t n) {
     size_t size = hda_size(arr);
 
     arr = hda_reserve(arr, el_sz, size + n);
-    HEADARR_SIZE(arr) = size + n;
+    HDA_SIZE(arr) = size + n;
 
     return arr;
 }
@@ -101,9 +101,9 @@ void hda_delete_imp(void *arr, size_t el_sz, size_t index, size_t n) {
         return;
 
     char *p = arr;
-    size_t shift_n = HEADARR_SIZE(arr) - (index + n);
+    size_t shift_n = HDA_SIZE(arr) - (index + n);
 
     memmove(&p[index * el_sz], &p[(index + n) * el_sz], shift_n * el_sz);
 
-    HEADARR_SIZE(arr) -= n;
+    HDA_SIZE(arr) -= n;
 }
