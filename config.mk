@@ -24,8 +24,3 @@ LT_SRC_CORE := \
 
 # UI split manager
 LT_SPLITTY_SRC := $(LT_ROOT)/src/splitty.c
-
-# PTY input parser
-LT_PARTTY_SRC := $(LT_ROOT)/src/partty/partty.c
-LT_PARTTY_INC := $(LT_ROOT)/inc/partty
-

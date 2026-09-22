@@ -6,7 +6,6 @@ void run_all(void) {
     RUN_TEST_GROUP(dstr);
     RUN_TEST_GROUP(darr);
     RUN_TEST_GROUP(splitty);
-    RUN_TEST_GROUP(partty);
     RUN_TEST_GROUP(kval);
     RUN_TEST_GROUP(hda);
     RUN_TEST_GROUP(hds);
