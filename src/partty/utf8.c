@@ -61,7 +61,6 @@ static uint32_t utf8_decode_bytes(uint8_t *bytes, size_t n) {
         }
     }
 
-    printf("decoded %d\n", cp);
 
     if (cp > 0x10FFFF)
         return (uint32_t)-1;
@@ -105,7 +104,6 @@ static int utf8_decode(uint8_t *bytes, size_t n, utf8_decode_info *info) {
             }
 
             if (--seq_len != 0) {
-                printf("leader byte len: %d\n", seq_len);
                 continue;
             }
 
@@ -127,7 +125,6 @@ static int utf8_decode(uint8_t *bytes, size_t n, utf8_decode_info *info) {
             seq_len = seq_len - 1;
             sequence_pending = true;
 
-            printf("leader byte len: %d\n", seq_len);
         }
     }
 
@@ -151,15 +148,9 @@ void resolve_codepoints(Partty *pt) {
         data = byte_buf_data(&pt->b);
         len = byte_buf_len(&pt->b);
 
-        printf("\nbegin: %zu   end: %zu\n", pt->b.begin, pt->b.end);
-        printf("data len: %zu\n", len);
-
         n = utf8_decode(data, len, &info);
 
-        printf("bytes used: %zu\n", n);
-
         if (info.status == UTF8_DECODE_OK) {
-            printf("decoded code point with %zu bytes!\n", n);
 
             utf8_data utf8_data;
             utf8_data.codepoint = info.codepoint;
@@ -169,11 +160,9 @@ void resolve_codepoints(Partty *pt) {
             byte_buf_consume(&pt->b, n);
 
         } else if (info.status == UTF8_DECODE_FAIL) {
-            printf("Decoding failed!\n");
             byte_buf_consume(&pt->b, n);
 
         } else if (info.status == UTF8_DECODE_WAIT) {
-            printf("Need more bytes!\n");
             break;
         }
     }

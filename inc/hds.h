@@ -22,6 +22,8 @@
 #define hds_copy_fmt(hds, fmt, ...) \
     hds_copy_fmt_imp(&(hds), fmt __VA_OPT__(,) __VA_ARGS__)
 
+size_t hds_len(const char *hds);
+
 void hds_append_imp(char **hds, const char *s, size_t n);
 __attribute__ ((__format__(printf, 2, 3)))
 void hds_append_fmt_imp(char **hds, const char *fmt, ...);

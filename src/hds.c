@@ -6,6 +6,11 @@
 #include "hda.h"
 #include "common.h"
 
+size_t hds_len(const char *hds) {
+    size_t size = hda_size(hds);
+    return (size == 0) ? 0 : size - 1;
+}
+
 void hds_append_imp(char **hds, const char *s, size_t n) {
     size_t size = hda_size(*hds);
     size_t idx = (size == 0) ? 0 : size - 1;

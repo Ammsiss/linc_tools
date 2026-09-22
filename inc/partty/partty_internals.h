@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "partty.h"
+#include "trie.h"
 #include "unibilium.h"
 
 #define MIN(a, b) ((a < b) ? a : b)
@@ -18,7 +19,7 @@
 typedef enum {
     VT_RES_OK,
     VT_RES_WAIT,
-    VT_RES_UNKNOWN,
+    VT_RES_NONE,
 } vt_res_status;
 
 typedef struct {
@@ -65,6 +66,7 @@ struct Partty {
     ByteBuf b;
     CpBuf cp;
     unibi_term *term;
+    Trie *seqs;
 };
 
 /* buffer.c */
@@ -86,6 +88,6 @@ utf8_byte_type find_utf8_type(uint8_t b, int *seq_len);
 void resolve_codepoints(Partty *pt);
 
 /* vt.c */
-int resolve_vt_seq(utf8_data *cp, size_t n, vt_data *key);
+int resolve_vt_seq(Partty *pt, vt_data *key);
 
 #endif
