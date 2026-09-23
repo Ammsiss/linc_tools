@@ -7,6 +7,8 @@ TEST_GROUP(darr);
 
 /************ Shared utils ************/
 
+DA_TYPE(da_int, int);
+
 static da_int arr;
 
 static void validate_array(da_int *arr, size_t size, size_t cap) {
@@ -50,7 +52,7 @@ TEST(darr, reserve_non_empty_array) {
 TEST(darr, reserve_realloc_preserves_data) {
     int *p = da_push(&arr);
     TEST_ASSERT_NOT_NULL(p);
-    validate_array(&arr, 1, 1);
+    validate_array(&arr, 1, 2);
 
     arr.data[0] = 100;
 
@@ -64,20 +66,20 @@ TEST(darr, reserve_realloc_preserves_data) {
 TEST(darr, push_returns_new_element) {
     int *p = da_push(&arr);
     TEST_ASSERT_EQUAL_PTR(&arr.data[0], p);
-    validate_array(&arr, 1, 1);
+    validate_array(&arr, 1, 2);
 }
 
 TEST(darr, delete_only_element) {
     da_push(&arr);
-    validate_array(&arr, 1, 1);
+    validate_array(&arr, 1, 2);
 
     da_delete(&arr, 0);
-    validate_array(&arr, 0, 1);
+    validate_array(&arr, 0, 2);
 }
 
 TEST(darr, delete_first_element) {
     int *p1 = da_push(&arr);
-    validate_array(&arr, 1, 1);
+    validate_array(&arr, 1, 2);
     *p1 = 1;
 
     int *p2 = da_push(&arr);
@@ -92,7 +94,7 @@ TEST(darr, delete_first_element) {
 
 TEST(darr, delete_last_element) {
     int *p1 = da_push(&arr);
-    validate_array(&arr, 1, 1);
+    validate_array(&arr, 1, 2);
     *p1 = 1;
 
     int *p2 = da_push(&arr);
@@ -107,7 +109,7 @@ TEST(darr, delete_last_element) {
 
 TEST(darr, delete_middle_element) {
     int *p1 = da_push(&arr);
-    validate_array(&arr, 1, 1);
+    validate_array(&arr, 1, 2);
     *p1 = 1;
 
     int *p2 = da_push(&arr);
@@ -115,11 +117,11 @@ TEST(darr, delete_middle_element) {
     *p2 = 2;
 
     int *p3 = da_push(&arr);
-    validate_array(&arr, 3, 3);
+    validate_array(&arr, 3, 4);
     *p3 = 3;
 
     da_delete(&arr, 1);
-    validate_array(&arr, 2, 3);
+    validate_array(&arr, 2, 4);
 
     TEST_ASSERT_EQUAL_INT(arr.data[0], 1);
     TEST_ASSERT_EQUAL_INT(arr.data[1], 3);

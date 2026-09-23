@@ -2,73 +2,103 @@
 #define DYN_ARR_H
 
 #include <stdlib.h>
+#include <string.h>
 
-/* Declare any types that you APPLY...
- *
- * eg) // darr_type_decs.h //
- *     struct mystruct;
- *     ...
- *     APPLY(arg, da_mystruct, struct mystruct)
- *
- * ...then include the full type definitions.
- *
- * eg) // darr_type_defs.h //
- *     #include "mystruct.h" */
+#include "common.h"
 
-#if __has_include("darr_type_decs.h")
-    #include "darr_type_decs.h"
-#else
-    #define DYN_ARR_TYPES(APPLY, arg) \
-        APPLY(arg, da_int, int)
-#endif
+#define DA_MAX(a, b) \
+    ((a) > (b)) ? (a) : (b)
 
-#define DECLARE_DYN_ARR(name, type) \
+#define DA_TYPE(name, type) \
     typedef struct { \
         type *data; \
         size_t size; \
         size_t cap; \
-    } name; \
-    void name##_init(name *arr);\
-    void name##_free(name *arr); \
-    type *name##_push(name *arr); \
-    void name##_reserve(name *arr, size_t min); \
-    void name##_delete(name *arr, size_t remove_i); \
-    type *name##_insert(name *arr, size_t insert_i);
+    } name;
 
-#define DA_DECLARE(_, name, type) DECLARE_DYN_ARR(name, type)
-    DYN_ARR_TYPES(DA_DECLARE, _)
-#undef DA_DECLARE
+static inline void *da_reserve_imp(void *data, size_t el_sz, size_t min,
+        size_t *cap)
+{
+    if (*cap >= min)
+        return data;
 
-#define DA_GENERIC_CASE(arg, name, type) , name: name##arg
+    *cap = DA_MAX(min, DA_MAX(2, *cap * 2));
 
-#define DA_GET(suffix, arr) \
-    _Generic(*(arr) DYN_ARR_TYPES(DA_GENERIC_CASE, suffix))
+    void *tmp = realloc(data, *cap * el_sz);
+    if (!tmp)
+        LIB_FATAL("realloc: out of memory");
+
+    data = tmp;
+
+    return data;
+}
 
 #define da_init(arr) \
-    DA_GET(_init, (arr))(arr)
+    do { \
+        assert(arr); \
+        *(arr) = (typeof(*(arr))){0}; \
+    } while (false)
 
 #define da_free(arr) \
-    DA_GET(_free, (arr))(arr)
+    do { \
+        assert(arr); \
+        free((arr)->data); \
+        *(arr) = (typeof(*(arr))){0}; \
+    } while (false)
+
+#define da_reserve(arr, _min) \
+    do { \
+        assert(arr); \
+        size_t min = _min; \
+        (arr)->data = da_reserve_imp( \
+            (arr)->data, \
+            sizeof(*(arr)->data), \
+            min, \
+            &(arr)->cap \
+        ); \
+    } while (false)
 
 #define da_push(arr) \
     ({ \
         assert(arr); \
-        DA_GET(_push, (arr))(arr); \
+        da_reserve((arr), (arr)->size + 1); \
+        &((arr)->data[(arr)->size++]); \
     })
 
-#define da_reserve(arr, size) \
-    DA_GET(_reserve, (arr))(arr, size)
+#define da_delete(arr, index_) \
+    do { \
+        assert(arr); \
+        size_t _da_i = (index_); \
+        assert(_da_i < (arr)->size); \
+        memmove( \
+            &(arr)->data[_da_i], \
+            &(arr)->data[_da_i + 1], \
+            ((arr)->size - _da_i - 1) * sizeof(*(arr)->data) \
+        ); \
+        --(arr)->size; \
+    } while (0)
 
-#define da_delete(arr, index) \
-    DA_GET(_delete, (arr))(arr, index)
+#define da_insert(arr, index_) \
+    ({ \
+        assert(arr); \
+        size_t _da_i = (index_); \
+        assert(_da_i <= (arr)->size); \
+        da_reserve((arr), (arr)->size + 1); \
+        memmove( \
+            &(arr)->data[_da_i + 1], \
+            &(arr)->data[_da_i], \
+            ((arr)->size - _da_i) * sizeof(*(arr)->data) \
+        ); \
+        ++(arr)->size; \
+        &((arr)->data[_da_i]); \
+    })
 
-/* Push an element and then initialize it */
 #define da_push_init(arr, init) \
     ({ \
-        void *_p = da_push(arr); \
-        if (_p && (init)(_p) == -1) \
-            _p = NULL; \
-        _p; \
+        __auto_type _da_p = da_push(arr); \
+        if (_da_p && (init)(_da_p) == -1) \
+            _da_p = NULL; \
+        _da_p; \
     })
 
 #endif
