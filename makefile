@@ -12,7 +12,7 @@ CFLAGS := -g -O0 -std=gnu23 -Wall -Wextra -fcolor-diagnostics
 CPPFLAGS := -I. -Iinc -I$(USRC_DIR) -I$(TEST_DIR) -Iinc/partty
 DFLAGS := -DUNITY_OUTPUT_COLOR -DUNITY_FIXTURE_NO_EXTRAS
 DEPFLAGS := -MMD -MP
-LDFLAGS := -lunibilium
+LDFLAGS :=
 
 SRCS := $(wildcard $(SRC_DIR)/*.c)
 SRCS += $(wildcard $(SRC_DIR)/partty/*.c)
