@@ -12,20 +12,24 @@ TEST_GROUP(llog);
 
 static char log_buf[8192];
 
-LLOG_SINK(info_sink) {
+void info_sink(const llog_info *info) {
     TEST_ASSERT_EQUAL_INT(LLOG_INFO, info->log_level);
     snprintf(log_buf, 8192, "INFO %s", info->msg);
 }
 
-LLOG_SINK(err_sink) {
+void err_sink(const llog_info *info) {
     TEST_ASSERT_EQUAL_INT(LLOG_ERR, info->log_level);
     snprintf(log_buf, 8192, "ERROR %s", info->msg);
 }
 
-LLOG_SINK(warn_sink) {
+void warn_sink(const llog_info *info) {
     TEST_ASSERT_EQUAL_INT(LLOG_WARN, info->log_level);
     snprintf(log_buf, 8192, "WARN %s", info->msg);
 }
+
+static llog info_log = { .sink = info_sink };
+static llog err_log = { .sink = err_sink };
+static llog warn_log = { .sink = warn_sink };
 
 /************ Fixture ************/
 
@@ -34,36 +38,27 @@ TEST_SETUP(llog) {
 }
 
 TEST_TEAR_DOWN(llog) {
-    llog_reset();
 }
 
 /************ Tests ************/
 
 TEST(llog, simple_info_log) {
-    llog_set_sink(info_sink);
-
-    LOG_INFO("hi");
+    llog_log(&info_log, LLOG_INFO, &LLOG_SITE, "hi");
     TEST_ASSERT_EQUAL_STRING("INFO hi", log_buf);
 }
 
 TEST(llog, simple_err_log) {
-    llog_set_sink(err_sink);
-
-    LOG_ERR("hi");
+    llog_log(&err_log, LLOG_ERR, &LLOG_SITE, "hi");
     TEST_ASSERT_EQUAL_STRING("ERROR hi", log_buf);
 }
 
 TEST(llog, simple_warn_log) {
-    llog_set_sink(warn_sink);
-
-    LOG_WARN("hi");
+    llog_log(&warn_log, LLOG_WARN, &LLOG_SITE, "hi");
     TEST_ASSERT_EQUAL_STRING("WARN hi", log_buf);
 }
 
 TEST(llog, special_chars_are_normalized) {
-    llog_set_sink(info_sink);
-
-    LOG_INFO("\n\t");
+    llog_log(&info_log, LLOG_INFO, &LLOG_SITE, "\n\t");
     TEST_ASSERT_EQUAL_STRING("INFO \\n\\t", log_buf);
 }
 
