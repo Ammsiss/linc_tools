@@ -1,5 +1,3 @@
-#define _GNU_SOURCE
-
 #include "unity_fixture.h"
 #include "hds.h"
 #include "hda.h"

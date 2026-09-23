@@ -1,26 +1,33 @@
 #ifndef LLOG_H
 #define LLOG_H
 
-#define _GNU_SOURCE
-
 #include <assert.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <stddef.h>
 #include <unistd.h>
 
 #include "common.h"
 #include "dstr.h"
-#include "dstr.h"
-#include <stddef.h>
-#include <unistd.h>
 
 #define LLOG_SITE \
     (llog_site_info){ \
         .file = __FILE__, \
         .func = __func__, \
         .line = __LINE__, \
+    }
+
+/* ONLY USE THE LOG_ MACROS and llog_default() IF YOU
+ * WILL NOT BE INCLUDED INTO ANOTHER PROJECT THAT MAY
+ * ALSO USE THE LOG_ MACORS and llog_default.
+ *
+ * LIBRARIES SHOULD USE llog_log() EXPLICITLY */
+
+#define LLOG_DEFAULT(log) \
+    llog *llog_default(void) { \
+        return log; \
     }
 
 #define LOG_INFO(fmt, ...) \
@@ -31,11 +38,6 @@
 
 #define LOG_ERR(fmt, ...) \
     llog_log(llog_default(), LLOG_ERR, &LLOG_SITE, fmt __VA_OPT__(,) __VA_ARGS__)
-
-#define LLOG_DEFAULT(log) \
-    llog *llog_default(void) { \
-        return log; \
-    }
 
 typedef enum {
     LLOG_INFO,
@@ -98,7 +100,7 @@ static inline void llog_log(llog *log, llog_lvl lvl, const llog_site_info *site,
 
     int saved_errno = errno;
 
-    static llog_info info;
+    llog_info info = {0};
     va_list va;
 
     info.saved_errno = saved_errno;
@@ -107,6 +109,7 @@ static inline void llog_log(llog *log, llog_lvl lvl, const llog_site_info *site,
     info.pid = getpid();
     info.ppid = getppid();
     info.pgid = getpgrp();
+    info.tid = gettid();
 
     va_start(va, fmt);
      if (vasprintf(&info.msg, fmt, va) < 0)

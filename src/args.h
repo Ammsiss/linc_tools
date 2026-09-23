@@ -137,6 +137,8 @@ static inline int arg_parse(int argc, char * const *argv, opt_data *opts,
 
     optind = 0;
 
+    int saved_opterr = opterr;
+
     if (flags & ARG_SILENT)
         opterr = 0;
 
@@ -149,7 +151,7 @@ static inline int arg_parse(int argc, char * const *argv, opt_data *opts,
 
     int long_optind;
 
-    struct option *long_opts = calloc(sizeof(opt_data), opt_n + 1);
+    struct option *long_opts = calloc(opt_n + 1, sizeof(*long_opts));
     if (!long_opts)
         LIB_FATAL("calloc: out of memory");
 
@@ -220,12 +222,14 @@ static inline int arg_parse(int argc, char * const *argv, opt_data *opts,
 
     free(long_opts);
     free(short_opts);
+    opterr = saved_opterr;
 
     return 0;
 
 fail:
     free(long_opts);
     free(short_opts);
+    opterr = saved_opterr;
 
     return -1;
 }

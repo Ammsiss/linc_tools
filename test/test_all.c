@@ -10,6 +10,7 @@ void run_all(void) {
     RUN_TEST_GROUP(hda);
     RUN_TEST_GROUP(hds);
     RUN_TEST_GROUP(trie);
+    RUN_TEST_GROUP(xfuncs);
 }
 
 int main(int argc, const char **argv) {

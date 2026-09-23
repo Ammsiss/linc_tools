@@ -9,7 +9,8 @@ USRC_DIR := unity
 CC := clang
 
 CFLAGS := -g -O0 -std=gnu23 -Wall -Wextra -fcolor-diagnostics
-CPPFLAGS := -I. -Iinc -I$(USRC_DIR) -I$(TEST_DIR) -Iinc/partty
+CPPFLAGS := -Isrc -I$(USRC_DIR) -I$(TEST_DIR) -Iinc/partty
+CPPFLAGS += -D_GNU_SOURCE
 DFLAGS := -DUNITY_OUTPUT_COLOR -DUNITY_FIXTURE_NO_EXTRAS
 DEPFLAGS := -MMD -MP
 LDFLAGS :=

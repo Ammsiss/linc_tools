@@ -6,7 +6,6 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#include "xfuncs.h"
 #include "common.h"
 
 #define SP_MOVED 1
@@ -236,7 +235,9 @@ static inline sp_node *sp_new_quad(sp_quad_config cfg) {
     assert(cfg.tl && cfg.tr && cfg.bl && cfg.br);
     assert(cfg.gl && cfg.gr && cfg.gt && cfg.gb && cfg.gj);
 
-    sp_node *quad = xmalloc(sizeof(sp_node));
+    sp_node *quad = malloc(sizeof(sp_node));
+    if (!quad)
+        LIB_FATAL("malloc: out of memory");
 
     *quad = (sp_node){
         .type = SP_QUAD,
@@ -264,7 +265,9 @@ static inline sp_node *sp_new_split(sp_split_config cfg) {
     assert(cfg.left && cfg.right);
     assert(cfg.split_gap >= 0);
 
-    sp_node *split = xmalloc(sizeof(sp_node));
+    sp_node *split = malloc(sizeof(sp_node));
+    if (!split)
+        LIB_FATAL("malloc: out of memory");
 
     *split = (sp_node){
         .type = SP_SPLIT,
@@ -286,7 +289,9 @@ static inline sp_node *sp_new_leaf(sp_init_fn *fn1, sp_resize_fn *fn2,
 {
     assert(fn1 && fn2 && fn3);
 
-    sp_node *leaf = xmalloc(sizeof(sp_node));
+    sp_node *leaf = malloc(sizeof(sp_node));
+    if (!leaf)
+        LIB_FATAL("malloc: out of memory");
 
     *leaf = (sp_node){
         .type = SP_LEAF,
