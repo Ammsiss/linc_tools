@@ -76,6 +76,7 @@ TEST(hda, two_dimensional_array) {
         hda_free(grid[row]);
 
     hda_free(grid);
+    TEST_ASSERT_NULL(grid);
 }
 
 TEST(hda, delete_span_of_elements_from_start) {

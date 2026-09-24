@@ -1,5 +1,5 @@
-#ifndef TRIE_H
-#define TRIE_H
+#ifndef LINC_TOOLS_TRIE_H
+#define LINC_TOOLS_TRIE_H
 
 #include <stddef.h>
 #include <assert.h>

@@ -1,5 +1,5 @@
-#ifndef LLOG_H
-#define LLOG_H
+#ifndef LINC_TOOLS_LLOG_H
+#define LINC_TOOLS_LLOG_H
 
 #include <assert.h>
 #include <stdlib.h>

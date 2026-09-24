@@ -1,5 +1,5 @@
-#ifndef DYN_ARR_H
-#define DYN_ARR_H
+#ifndef LINC_TOOLS_DYN_ARR_H
+#define LINC_TOOLS_DYN_ARR_H
 
 #include <stdlib.h>
 #include <string.h>

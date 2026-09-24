@@ -1,5 +1,5 @@
-#ifndef XFUNCS_H
-#define XFUNCS_H
+#ifndef LINC_TOOLS_XFUNCS_H
+#define LINC_TOOLS_XFUNCS_H
 
 #include <fcntl.h>
 #include <stdint.h>

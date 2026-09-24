@@ -1,5 +1,5 @@
-#ifndef SPLITTY_H
-#define SPLITTY_H
+#ifndef LINC_TOOLS_SPLITTY_H
+#define LINC_TOOLS_SPLITTY_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -351,5 +351,5 @@ static inline void sp_free(sp_node *node) {
     free(node);
 }
 
-#undef SP_CHILD_MAX
+#undef _SP_CHILD_MAX
 #endif

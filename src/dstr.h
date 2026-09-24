@@ -1,5 +1,5 @@
-#ifndef DSTR_H
-#define DSTR_H
+#ifndef LINC_TOOLS_DSTR_H
+#define LINC_TOOLS_DSTR_H
 
 #include <stddef.h>
 #include <assert.h>

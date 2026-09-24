@@ -1,5 +1,5 @@
-#ifndef HASH_H
-#define HASH_H
+#ifndef LINC_TOOLS_HASH_H
+#define LINC_TOOLS_HASH_H
 
 #include <stddef.h>
 #include <stdint.h>

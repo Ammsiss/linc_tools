@@ -23,8 +23,8 @@
     if (opts[LOGFD].found)
         logfd = opts[LOGFD].val_int;  */
 
-#ifndef ARGS_H
-#define ARGS_H
+#ifndef LINC_TOOLS_ARGS_H
+#define LINC_TOOLS_ARGS_H
 
 #include <stddef.h>
 #include <assert.h>

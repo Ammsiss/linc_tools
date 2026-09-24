@@ -1,5 +1,5 @@
-#ifndef KVAL
-#define KVAL
+#ifndef LINC_TOOLS_KVAL
+#define LINC_TOOLS_KVAL
 
 #include <stddef.h>
 #include <stdlib.h>

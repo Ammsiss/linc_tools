@@ -1,5 +1,5 @@
-#ifndef HDA_H
-#define HDA_H
+#ifndef LINC_TOOLS_HDA_H
+#define LINC_TOOLS_HDA_H
 
 #include <assert.h>
 #include <stddef.h>
@@ -49,6 +49,12 @@
 #define hda_last(hda) \
     ((typeof(hda))_hda_last_imp(hda, _HDA_EL_SZ(hda)))
 
+#define hda_free(hda) \
+    do { \
+        _hda_free_imp(hda); \
+        hda = nullptr; \
+    } while (false)
+
 static inline size_t *_hda_start(const void *hda) {
     return (hda) ? _HDA_START(hda) : NULL;
 }
@@ -61,7 +67,7 @@ static inline size_t hda_cap(const void *hda) {
     return (hda) ? _HDA_CAP(hda) : 0;
 }
 
-static inline void hda_free(void *hda) {
+static inline void _hda_free_imp(void *hda) {
     if (!hda)
         return;
 
@@ -153,10 +159,10 @@ static inline void _hda_delete_imp(void *hda, size_t el_sz, size_t index,
     _HDA_SIZE(hda) -= n;
 }
 
-#undef HDA_MAX
-#undef HDA_BYTE_N
-#undef HDA_START
-#undef HDA_SIZE
-#undef HDA_CAP
+#undef _HDA_MAX
+#undef _HDA_BYTE_N
+#undef _HDA_START
+#undef _HDA_SIZE
+#undef _HDA_CAP
 
 #endif

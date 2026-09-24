@@ -1,5 +1,5 @@
-#ifndef HDS_S
-#define HDS_S
+#ifndef LINC_TOOLS_HDS_S
+#define LINC_TOOLS_HDS_S
 
 #include <string.h>
 #include <stddef.h>

@@ -1,5 +1,5 @@
-#ifndef COMMON_H
-#define COMMON_H
+#ifndef LINC_TOOLS_COMMON_H
+#define LINC_TOOLS_COMMON_H
 
 #include <stdlib.h>
 #include <unistd.h>
