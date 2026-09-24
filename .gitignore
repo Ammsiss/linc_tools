@@ -1,3 +1,4 @@
 build/
 test_all
 compile_commands.json
+linc_tools.h

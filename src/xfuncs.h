@@ -85,7 +85,6 @@ typedef struct {
     char **backtrace;
 } _xfuncs_info;
 
-__attribute__ ((__noreturn__))
 typedef void (xfatal_handler)(const _xfuncs_info *, ...);
 
 typedef struct {
@@ -442,7 +441,7 @@ static inline DIR *
 _xopendir_at(xfatal *xf, _xfuncs_site *site, const char *name) {
     DIR *rv = opendir(name);
     if (!rv)
-        _XFUNCS_SYS_FAIL(xf, site, opendir, name, name);
+        _XFUNCS_SYS_FAIL(xf, site, opendir, name);
 
     return rv;
 }
@@ -492,5 +491,4 @@ _xchdir_at(xfatal *xf, _xfuncs_site *site, const char *pathname) {
     return rv;
 }
 
-// #undef _XFUNCS_SYS_FAIL
 #endif

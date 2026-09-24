@@ -1,42 +1,42 @@
-BIN := test_all
-BLD_DIR := build
-COMPCOM := compile_commands.json
+BUILD := build
+BIN   := $(BUILD)/test_all
 
-SRC_DIR := src
+SRC_DIR  := src
 TEST_DIR := test
 USRC_DIR := unity
 
-CC := clang
-
-CFLAGS := -g -O0 -std=gnu23 -Wall -Wextra -fcolor-diagnostics
-CPPFLAGS := -Isrc -I$(USRC_DIR) -I$(TEST_DIR) -Iinc/partty
-CPPFLAGS += -D_GNU_SOURCE
-DFLAGS := -DUNITY_OUTPUT_COLOR -DUNITY_FIXTURE_NO_EXTRAS
+CC       := clang
+CFLAGS   := -g -O0 -std=gnu23 -Wall -Wextra -fcolor-diagnostics
+CPPFLAGS := -I. -I$(SRC_DIR) -I$(USRC_DIR) -I$(TEST_DIR)
+CPPFLAGS += -D_GNU_SOURCE -DUNITY_OUTPUT_COLOR -DUNITY_FIXTURE_NO_EXTRAS
 DEPFLAGS := -MMD -MP
-LDFLAGS :=
 
-SRCS := $(wildcard $(SRC_DIR)/*.c)
-SRCS += $(wildcard $(SRC_DIR)/partty/*.c)
-SRCS += $(wildcard $(TEST_DIR)/*.c)
+CC_FLAGS := $(CFLAGS) $(CPPFLAGS) $(DEPFLAGS)
+
+SRCS := $(wildcard $(TEST_DIR)/*.c)
 SRCS += $(wildcard $(USRC_DIR)/*.c)
 
-OBJS := $(patsubst %.c,$(BLD_DIR)/%.o,$(SRCS))
-DEPS := $(patsubst %.c,$(BLD_DIR)/%.d,$(SRCS))
+OBJS := $(patsubst %.c,$(BUILD)/%.o,$(SRCS))
+DEPS := $(patsubst %.c,$(BUILD)/%.d,$(SRCS))
 
-COMP_FLAGS := $(CFLAGS) $(CPPFLAGS) $(DFLAGS) $(DEPFLAGS)
+.PHONY: all clean amalgamate
 
-.PHONY: all
-all: $(BIN)
+all:
+	lua amalgamate.lua
+	$(MAKE) $(BIN)
+	valgrind --leak-check=full --quiet ./build/test_all
 
 $(BIN): $(OBJS)
-	$(CC) $(COMP_FLAGS) $(LDFLAGS) $^ -o $@
+	$(CC) $^ -o $@
 
-$(BLD_DIR)/%.o: %.c
+linc_tools.h:
+
+
+$(BUILD)/%.o: %.c
 	mkdir -p $(dir $@)
-	$(CC) $(COMP_FLAGS) -c $< -o $@
+	$(CC) $(CC_FLAGS) -c $< -o $@
 
-.PHONY: clean
 clean:
-	rm -rf $(BIN) $(BLD_DIR) $(COMPCOM)
+	rm -rf $(BUILD)
 
 -include $(DEPS)

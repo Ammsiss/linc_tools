@@ -2,7 +2,7 @@
 #include <fcntl.h>
 
 #include "unity_fixture.h"
-#include "llog.h"
+#include "linc_tools.h"
 
 TEST_GROUP(llog);
 

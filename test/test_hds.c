@@ -1,6 +1,5 @@
 #include "unity_fixture.h"
-#include "hds.h"
-#include "hda.h"
+#include "linc_tools.h"
 
 TEST_GROUP(hds);
 

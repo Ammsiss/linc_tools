@@ -1,12 +1,12 @@
 #include "unity_fixture.h"
-#include "trie.h"
+#include "linc_tools.h"
 
 TEST_GROUP(trie);
 
 /************ Fixture ************/
 
 Trie *tr;
-trie_status stat;
+trie_status trie_stat;
 int *data;
 
 TEST_SETUP(trie) {
@@ -21,55 +21,55 @@ TEST_TEAR_DOWN(trie) {
 
 TEST(trie, simple_exact_match) {
     trie_add(tr, "abc", &(int){1}, sizeof(int));
-    data = trie_lookup(tr, "abc", &stat);
+    data = trie_lookup(tr, "abc", &trie_stat);
 
-    TEST_ASSERT_EQUAL_INT(TRIE_MATCH, stat);
+    TEST_ASSERT_EQUAL_INT(TRIE_MATCH, trie_stat);
     TEST_ASSERT_EQUAL_INT(1, *data);
 }
 
 TEST(trie, lookup_with_no_match) {
     trie_add(tr, "abc", &(int){1}, sizeof(int));
-    data = trie_lookup(tr, "def", &stat);
+    data = trie_lookup(tr, "def", &trie_stat);
 
-    TEST_ASSERT_EQUAL_INT(TRIE_NONE, stat);
+    TEST_ASSERT_EQUAL_INT(TRIE_NONE, trie_stat);
     TEST_ASSERT_NULL(data);
 }
 
 TEST(trie, lookup_with_wait_match) {
     trie_add(tr, "abcdef", &(int){1}, sizeof(int));
-    data = trie_lookup(tr, "abc", &stat);
+    data = trie_lookup(tr, "abc", &trie_stat);
 
-    TEST_ASSERT_EQUAL_INT(TRIE_WAIT, stat);
+    TEST_ASSERT_EQUAL_INT(TRIE_WAIT, trie_stat);
     TEST_ASSERT_NULL(data);
 }
 
 TEST(trie, lookup_with_ambiguous_match) {
     trie_add(tr, "abc", &(int){1}, sizeof(int));
     trie_add(tr, "abcdef", &(int){2}, sizeof(int));
-    data = trie_lookup(tr, "abc", &stat);
+    data = trie_lookup(tr, "abc", &trie_stat);
 
-    TEST_ASSERT_EQUAL_INT(TRIE_AMBIG, stat);
+    TEST_ASSERT_EQUAL_INT(TRIE_AMBIG, trie_stat);
     TEST_ASSERT_EQUAL_INT(1, *data);
 }
 
 TEST(trie, add_and_lookup_empty_string) {
     trie_add(tr, "", &(int){1}, sizeof(int));
-    data = trie_lookup(tr, "", &stat);
+    data = trie_lookup(tr, "", &trie_stat);
 
-    TEST_ASSERT_EQUAL_INT(TRIE_MATCH, stat);
+    TEST_ASSERT_EQUAL_INT(TRIE_MATCH, trie_stat);
     TEST_ASSERT_EQUAL_INT(1, *data);
 
     trie_add(tr, "x", &(int){2}, sizeof(int));
-    data = trie_lookup(tr, "x", &stat);
+    data = trie_lookup(tr, "x", &trie_stat);
 
-    TEST_ASSERT_EQUAL_INT(TRIE_MATCH, stat);
+    TEST_ASSERT_EQUAL_INT(TRIE_MATCH, trie_stat);
     TEST_ASSERT_EQUAL_INT(2, *data);
 }
 
 TEST(trie, lookup_empty_string_on_empty_trie) {
-    trie_lookup(tr, "", &stat);
+    trie_lookup(tr, "", &trie_stat);
 
-    TEST_ASSERT_EQUAL_INT(TRIE_NONE, stat);
+    TEST_ASSERT_EQUAL_INT(TRIE_NONE, trie_stat);
 }
 
 /************ Test runner ************/

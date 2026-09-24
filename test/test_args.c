@@ -1,7 +1,7 @@
 #include <getopt.h>
 
 #include "unity_fixture.h"
-#include "args.h"
+#include "linc_tools.h"
 
 TEST_GROUP(args);
 

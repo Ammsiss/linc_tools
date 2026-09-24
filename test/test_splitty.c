@@ -3,7 +3,7 @@
 #include <fcntl.h>
 
 #include "unity_fixture.h"
-#include "splitty.h"
+#include "linc_tools.h"
 
 TEST_GROUP(splitty);
 
