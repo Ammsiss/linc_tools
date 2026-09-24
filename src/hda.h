@@ -10,77 +10,83 @@
 
 #include "common.h"
 
-#define MAX(a, b) \
+#define _HDA_MAX(a, b) \
     (((a) > (b)) ? a : b)
 
-#define HDA_BYTE_N (2 * sizeof(size_t))
+#define _HDA_BYTE_N (2 * sizeof(size_t))
 
-#define HDA_START(arr) \
-    ((size_t *)((char *)(arr) - HDA_BYTE_N))
+#define _HDA_START(arr) \
+    ((size_t *)((char *)(arr) - _HDA_BYTE_N))
 
-#define HDA_SIZE(arr) \
-    (HDA_START(arr)[0])
+#define _HDA_SIZE(arr) \
+    (_HDA_START(arr)[0])
 
-#define HDA_CAP(arr) \
-    (HDA_START(arr)[1])
+#define _HDA_CAP(arr) \
+    (_HDA_START(arr)[1])
 
-#define EL_SZ(hda) \
+#define _HDA_EL_SZ(hda) \
     sizeof(*(hda))
 
 #define hda_push(hda, ...) \
     ({ \
-        hda = hda_grow(hda, EL_SZ(hda), 1); \
+        hda = _hda_grow(hda, _HDA_EL_SZ(hda), 1); \
         *hda_last(hda) = (typeof(*(hda)))__VA_ARGS__; \
         hda_last(hda); \
     })
 
 #define hda_insert(hda, index, n, ...) \
-    hda = hda_insert_imp(hda, (typeof(*hda)[])__VA_ARGS__, EL_SZ(hda), index, n)
+    (hda = _hda_insert_imp( \
+            hda, \
+            (typeof(*hda)[])__VA_ARGS__, \
+            _HDA_EL_SZ(hda), \
+            index, \
+            n \
+    ))
 
 #define hda_delete(hda, index, n) \
-    hda_delete_imp(hda, EL_SZ(hda), index, n)
+    _hda_delete_imp(hda, _HDA_EL_SZ(hda), index, n)
 
 #define hda_last(hda) \
-    ((typeof(hda))hda_last_imp(hda, EL_SZ(hda)))
+    ((typeof(hda))_hda_last_imp(hda, _HDA_EL_SZ(hda)))
 
-static inline size_t *hda_start(const void *hda) {
-    return (hda) ? HDA_START(hda) : NULL;
+static inline size_t *_hda_start(const void *hda) {
+    return (hda) ? _HDA_START(hda) : NULL;
 }
 
 static inline size_t hda_size(const void *hda) {
-    return (hda) ? HDA_SIZE(hda) : 0;
+    return (hda) ? _HDA_SIZE(hda) : 0;
 }
 
 static inline size_t hda_cap(const void *hda) {
-    return (hda) ? HDA_CAP(hda) : 0;
+    return (hda) ? _HDA_CAP(hda) : 0;
 }
 
 static inline void hda_free(void *hda) {
     if (!hda)
         return;
 
-    free(HDA_START(hda));
+    free(_HDA_START(hda));
 }
 
-static inline void *hda_reserve(void *hda, size_t el_sz, size_t min) {
+static inline void *_hda_reserve(void *hda, size_t el_sz, size_t min) {
     size_t cap = hda_cap(hda);
 
     if (cap >= min)
         return hda;
 
-    cap = MAX(min, MAX(2, cap * 2));
+    cap = _HDA_MAX(min, _HDA_MAX(2, cap * 2));
 
-    void *tmp = realloc(hda_start(hda), HDA_BYTE_N + (cap * el_sz));
+    void *tmp = realloc(_hda_start(hda), _HDA_BYTE_N + (cap * el_sz));
     if (!tmp)
-        LIB_FATAL("realloc: out of memory");
+        _LINC_LIB_FATAL("realloc: out of memory");
 
-    hda = (char *)tmp + HDA_BYTE_N;
-    HDA_CAP(hda) = cap;
+    hda = (char *)tmp + _HDA_BYTE_N;
+    _HDA_CAP(hda) = cap;
 
     return hda;
 }
 
-static inline void *hda_last_imp(void *hda, size_t el_sz) {
+static inline void *_hda_last_imp(void *hda, size_t el_sz) {
     if (hda_size(hda) == 0)
         return NULL;
 
@@ -88,17 +94,17 @@ static inline void *hda_last_imp(void *hda, size_t el_sz) {
     return &p[(hda_size(hda) - 1) * el_sz];
 }
 
-static inline void *hda_grow(void *hda, size_t el_sz, size_t n) {
+static inline void *_hda_grow(void *hda, size_t el_sz, size_t n) {
     size_t size = hda_size(hda);
 
-    hda = hda_reserve(hda, el_sz, size + n);
-    HDA_SIZE(hda) = size + n;
+    hda = _hda_reserve(hda, el_sz, size + n);
+    _HDA_SIZE(hda) = size + n;
 
     return hda;
 }
 
-static inline void *hda_insert_imp(void *hda, const void *els, size_t el_sz,
-        size_t idx, size_t n)
+static inline void *_hda_insert_imp(void *hda, const void *els,
+        size_t el_sz, size_t idx, size_t n)
 {
     assert(els);
     assert(el_sz > 0);
@@ -108,19 +114,19 @@ static inline void *hda_insert_imp(void *hda, const void *els, size_t el_sz,
         return hda;
 
     if (n > SIZE_MAX / el_sz)
-        LIB_FATAL("allocation overflow");
+        _LINC_LIB_FATAL("allocation overflow");
 
     /* to guard against overlapping hda and el on realloc.
      * Can avoid the malloc on every insert by checking for
      * address overlap (uintptr_t) */
     void *el_copy = malloc(el_sz * n);
     if (!el_copy)
-        LIB_FATAL("malloc: out of memory");
+        _LINC_LIB_FATAL("malloc: out of memory");
 
     memcpy(el_copy, els, el_sz * n);
 
     size_t size = hda_size(hda);
-    hda = hda_grow(hda, el_sz, n);
+    hda = _hda_grow(hda, el_sz, n);
 
     char *p = hda;
     memmove(&p[(idx + n) * el_sz], &p[idx * el_sz], (size - idx) * el_sz);
@@ -130,7 +136,9 @@ static inline void *hda_insert_imp(void *hda, const void *els, size_t el_sz,
     return hda;
 }
 
-static inline void hda_delete_imp(void *hda, size_t el_sz, size_t index, size_t n) {
+static inline void _hda_delete_imp(void *hda, size_t el_sz, size_t index,
+        size_t n)
+{
     assert(el_sz > 0);
     assert(index + n <= hda_size(hda));
 
@@ -138,11 +146,17 @@ static inline void hda_delete_imp(void *hda, size_t el_sz, size_t index, size_t 
         return;
 
     char *p = hda;
-    size_t shift_n = HDA_SIZE(hda) - (index + n);
+    size_t shift_n = _HDA_SIZE(hda) - (index + n);
 
     memmove(&p[index * el_sz], &p[(index + n) * el_sz], shift_n * el_sz);
 
-    HDA_SIZE(hda) -= n;
+    _HDA_SIZE(hda) -= n;
 }
+
+#undef HDA_MAX
+#undef HDA_BYTE_N
+#undef HDA_START
+#undef HDA_SIZE
+#undef HDA_CAP
 
 #endif

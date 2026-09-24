@@ -70,7 +70,7 @@ typedef struct {
 
 llog *llog_default(void);
 
-static inline void convert_special_chars(char **output_msg) {
+static inline void _llog_convert_special_chars(char **output_msg) {
     dstr out;
     dstr_init(&out);
 
@@ -113,10 +113,10 @@ static inline void llog_log(llog *log, llog_lvl lvl, const llog_site_info *site,
 
     va_start(va, fmt);
      if (vasprintf(&info.msg, fmt, va) < 0)
-         LIB_FATAL("llog: vasprintf: allocation or IO error");
+         _LINC_LIB_FATAL("llog: vasprintf: allocation or IO error");
      va_end(va);
 
-    convert_special_chars(&info.msg);
+    _llog_convert_special_chars(&info.msg);
     log->sink(&info);
     free(info.msg);
 

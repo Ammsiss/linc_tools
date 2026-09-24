@@ -10,7 +10,7 @@
 
 #define SP_MOVED 1
 #define SP_RESIZED 2
-#define SP_NODE_CHILD_MAX 100
+#define _SP_CHILD_MAX 100
 
 typedef struct sp_node sp_node;
 typedef struct sp_rect sp_rect;
@@ -87,7 +87,7 @@ struct sp_node {
         /* container */
         struct {
             size_t child_n;
-            sp_node *children[SP_NODE_CHILD_MAX];
+            sp_node *children[_SP_CHILD_MAX];
 
             union {
                 /* split */
@@ -117,7 +117,7 @@ struct sp_node {
     };
 };
 
-static inline void calc_quad(sp_node *node, sp_rect rects[SP_NODE_CHILD_MAX]) {
+static inline void _sp_calc_quad(sp_node *node, sp_rect rects[_SP_CHILD_MAX]) {
     int gap = node->quad_gap;
 
     if (gap > node->rect.rows)
@@ -190,7 +190,7 @@ static inline void calc_quad(sp_node *node, sp_rect rects[SP_NODE_CHILD_MAX]) {
     rects[SP_QUAD_GJ].x = x_gap_x;
 }
 
-static inline void calc_split(sp_node *node, sp_rect rects[SP_NODE_CHILD_MAX]) {
+static inline void _sp_calc_split(sp_node *node, sp_rect rects[_SP_CHILD_MAX]) {
     int gap = node->split_gap;
 
     rects[SP_SPLIT_LEFT] = node->rect;
@@ -237,7 +237,7 @@ static inline sp_node *sp_new_quad(sp_quad_config cfg) {
 
     sp_node *quad = malloc(sizeof(sp_node));
     if (!quad)
-        LIB_FATAL("malloc: out of memory");
+        _LINC_LIB_FATAL("malloc: out of memory");
 
     *quad = (sp_node){
         .type = SP_QUAD,
@@ -267,7 +267,7 @@ static inline sp_node *sp_new_split(sp_split_config cfg) {
 
     sp_node *split = malloc(sizeof(sp_node));
     if (!split)
-        LIB_FATAL("malloc: out of memory");
+        _LINC_LIB_FATAL("malloc: out of memory");
 
     *split = (sp_node){
         .type = SP_SPLIT,
@@ -291,7 +291,7 @@ static inline sp_node *sp_new_leaf(sp_init_fn *fn1, sp_resize_fn *fn2,
 
     sp_node *leaf = malloc(sizeof(sp_node));
     if (!leaf)
-        LIB_FATAL("malloc: out of memory");
+        _LINC_LIB_FATAL("malloc: out of memory");
 
     *leaf = (sp_node){
         .type = SP_LEAF,
@@ -326,12 +326,12 @@ static inline void sp_refresh(sp_node *node, sp_rect rect) {
             node->resize(node, change_flags);
 
     } else {
-        sp_rect rects[SP_NODE_CHILD_MAX];
+        sp_rect rects[_SP_CHILD_MAX];
 
         switch (node->type) {
-        case SP_SPLIT: calc_split(node, rects); break;
-        case SP_QUAD:  calc_quad(node, rects);  break;
-        default: LIB_FATAL("splitty: unexpected node type");
+        case SP_SPLIT: _sp_calc_split(node, rects); break;
+        case SP_QUAD:  _sp_calc_quad(node, rects);  break;
+        default: _LINC_LIB_FATAL("splitty: unexpected node type");
         }
 
         for (size_t i = 0; i < node->child_n; ++i)
@@ -351,4 +351,5 @@ static inline void sp_free(sp_node *node) {
     free(node);
 }
 
+#undef SP_CHILD_MAX
 #endif

@@ -10,8 +10,6 @@
 
 #include "common.h"
 
-#define DSTR_PFFORMAT(x, y) __attribute__ ((format(printf, (x), (y))))
-
 struct dstr {
     char *c_str;
     size_t len;
@@ -28,7 +26,7 @@ static inline void dstr_init(dstr *str) {
 
     str->c_str = malloc(1);
     if (!str->c_str)
-        LIB_FATAL("malloc: out of memory");
+        _LINC_LIB_FATAL("malloc: out of memory");
 
     str->c_str[0] = '\0';
 
@@ -52,7 +50,7 @@ static inline void dstr_reserve(dstr *str, size_t min) {
 
     void *tmp = realloc(str->c_str, min * sizeof(*str->c_str));
     if (!tmp)
-        LIB_FATAL("realloc: out of memory");
+        _LINC_LIB_FATAL("realloc: out of memory");
 
     str->c_str = tmp;
     str->cap = min;
@@ -100,7 +98,7 @@ static inline void dstr_printf(dstr *dst, char *fmt, ...) {
 
     va_start(va, fmt);
     if (vsnprintf(max_fmt_print, 8192, fmt, va) < 0)
-        LIB_FATAL("vsnprintf: output error");
+        _LINC_LIB_FATAL("vsnprintf: output error");
     va_end(va);
 
     dstrcat(dst, max_fmt_print);

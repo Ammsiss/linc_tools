@@ -19,22 +19,19 @@
 #include <dirent.h>
 #include <errno.h>
 
-#define SITE \
-    (site_info){ \
-        .file = __FILE__, \
-        .func = __func__, \
-        .line = __LINE__, \
-    }
-
 #define XFILE     info->site->file
 #define XFUNC     info->site->func
 #define XLINE     info->site->line
 #define XSYSNAME  info->sys_name
 #define XERRNO    info->saved_errno
+#define XPID      info->pid
+#define XPPID     info->ppid
+#define XPGID     info->pgid
+#define XTID      info->tid
 
 #define XFATAL_HANDLER(name) \
     __attribute__ ((__noreturn__)) \
-    void name(const xinfo *info [[maybe_unused]], ...)
+    void name(const _xfuncs_info *info [[maybe_unused]], ...)
 
 /* ONLY USE THE XFUNCS MACROS WITH xfatal_default() IF YOU
  * WILL NOT BE INCLUDED INTO ANOTHER PROJECT THAT MAY
@@ -44,36 +41,37 @@
 
 #define XFATAL_DEFAULT(xf) \
     xfatal *xfatal_default(void) { \
+        assert(xf); \
         return xf; \
     }
 
-#define SYS_FAIL(xf, _sys_name, ...) \
+#define _XFUNCS_SYS_FAIL(xf, _site, _sys_name, ...) \
     do { \
         assert(xf); \
         if (xf->handler) { \
-            xinfo info = { .site = site }; \
-            collect_xinfo(&info, #_sys_name); \
+            _xfuncs_info info = { .site = _site }; \
+            _xfuncs_collect_xinfo(&info, #_sys_name); \
             xf->handler(&info __VA_OPT__(,) __VA_ARGS__); \
-            _exit(EXIT_FAILURE); \
+            abort(); \
         } else \
             exit(EXIT_FAILURE); \
     } while (false)
 
 typedef enum {
-    AVAIL_SID = 1,
-    AVAIL_BTRACE = 2,
-} available_flags;
+    XFUNCS_AVAIL_SID = 1,
+    XFUNCS_AVAIL_BTRACE = 2,
+} xfuncs_available_flags;
 
 typedef struct {
     const char *file;
     const char *func;
     int line;
-} site_info;
+} _xfuncs_site;
 
 typedef struct {
     /* Guaranteed */
     int saved_errno;
-    const site_info *site;
+    const _xfuncs_site *site;
     const char *sys_name;
     pid_t pid;
     pid_t ppid;
@@ -85,10 +83,10 @@ typedef struct {
     pid_t sid;
     int backtrace_count;
     char **backtrace;
-} xinfo;
+} _xfuncs_info;
 
 __attribute__ ((__noreturn__))
-typedef void (xfatal_handler)(const xinfo *, ...);
+typedef void (xfatal_handler)(const _xfuncs_info *, ...);
 
 typedef struct {
     xfatal_handler *handler;
@@ -96,8 +94,10 @@ typedef struct {
 
 xfatal *xfatal_default(void);
 
-static inline void collect_xinfo(xinfo *info, const char *sys_name) {
-#define BT_BUF_SIZE 100
+static inline void _xfuncs_collect_xinfo(_xfuncs_info *info,
+        const char *sys_name)
+{
+#define _XFUNCS_BT_BUF_SIZE 100
     info->saved_errno = errno; /* do this first! */
 
     /* Guaranteed */
@@ -112,56 +112,64 @@ static inline void collect_xinfo(xinfo *info, const char *sys_name) {
 
     info->sid = getsid(0);
     if (info->sid != (pid_t)-1)
-        info->available |= AVAIL_SID;
+        info->available |= XFUNCS_AVAIL_SID;
 
-    void *bt[BT_BUF_SIZE];
-    int nptr = backtrace(bt, BT_BUF_SIZE);
-    if (nptr < BT_BUF_SIZE && nptr > 2) {
+    void *bt[_XFUNCS_BT_BUF_SIZE];
+    int nptr = backtrace(bt, _XFUNCS_BT_BUF_SIZE);
+    if (nptr < _XFUNCS_BT_BUF_SIZE && nptr > 2) {
         info->backtrace = backtrace_symbols(bt + 2, nptr - 2);
         if (info->backtrace) {
             info->backtrace_count = nptr - 2;
-            info->available |= AVAIL_BTRACE;
+            info->available |= XFUNCS_AVAIL_BTRACE;
         }
     }
+#undef _XFUNCS_BT_BUF_SIZE
 }
 
-#define xopen(...)            xopen_at(xfatal_default(), &SITE, __VA_ARGS__)
-#define xdup2(...)            xdup2_at(xfatal_default(), &SITE, __VA_ARGS__)
-#define xclose(...)           xclose_at(xfatal_default(), &SITE, __VA_ARGS__)
-#define xmalloc(...)          xmalloc_at(xfatal_default(), &SITE, __VA_ARGS__)
-#define xcalloc(...)          xcalloc_at(xfatal_default(), &SITE, __VA_ARGS__)
-#define xrealloc(...)         xrealloc_at(xfatal_default(), &SITE, __VA_ARGS__)
-#define xsigaction(...)       xsigaction_at(xfatal_default(), &SITE, __VA_ARGS__)
-#define xsigemptyset(...)     xsigemptyset_at(xfatal_default(), &SITE, __VA_ARGS__)
-#define xsigaddset(...)       xsigaddset_at(xfatal_default(), &SITE, __VA_ARGS__)
-#define xsigdelset(...)       xsigdelset_at(xfatal_default(), &SITE, __VA_ARGS__)
-#define xsigprocmask(...)     xsigprocmask_at(xfatal_default(), &SITE, __VA_ARGS__)
-#define xsetpgid(...)         xsetpgid_at(xfatal_default(), &SITE, __VA_ARGS__)
-#define xtcsetpgrp(...)       xtcsetpgrp_at(xfatal_default(), &SITE, __VA_ARGS__)
-#define xgetcwd(...)          xgetcwd_at(xfatal_default(), &SITE, __VA_ARGS__)
-#define xkill(...)            xkill_at(xfatal_default(), &SITE, __VA_ARGS__)
-#define xatexit(...)          xatexit_at(xfatal_default(), &SITE, __VA_ARGS__)
-#define xpipe(...)            xpipe_at(xfatal_default(), &SITE, __VA_ARGS__)
-#define xpipe2(...)           xpipe2_at(xfatal_default(), &SITE, __VA_ARGS__)
-#define xfork()               xfork_at(xfatal_default(), &SITE)
-#define xtcgetattr(...)       xtcgetattr_at(xfatal_default(), &SITE, __VA_ARGS__)
-#define xtcsetattr(...)       xtcsetattr_at(xfatal_default(), &SITE, __VA_ARGS__)
-#define xforkpty(...)         xforkpty_at(xfatal_default(), &SITE, __VA_ARGS__)
-#define xpoll(...)            xpoll_at(xfatal_default(), &SITE, __VA_ARGS__)
-#define xtimerfd_create(...)  xtimerfd_create_at(xfatal_default(),&SITE, __VA_ARGS__)
-#define xtimerfd_settime(...) xtimerfd_settime_at(xfatal_default(),&SITE,__VA_ARGS__)
-#define xstrdup(...)          xstrdup_at(xfatal_default(), &SITE, __VA_ARGS__)
-#define xstrndup(...)         xstrndup_at(xfatal_default(), &SITE, __VA_ARGS__)
-#define xsetvbuf(...)         xsetvbuf_at(xfatal_default(), &SITE, __VA_ARGS__)
-#define xopendir(...)         xopendir_at(xfatal_default(), &SITE, __VA_ARGS__)
-#define xclosedir(...)        xclosedir_at(xfatal_default(), &SITE, __VA_ARGS__)
-#define xmkdir(...)           xmkdir_at(xfatal_default(), &SITE, __VA_ARGS__)
-#define xrmdir(...)           xrmdir_at(xfatal_default(), &SITE, __VA_ARGS__)
-#define xunlink(...)          xunlink_at(xfatal_default(), &SITE, __VA_ARGS__)
-#define xchdir(...)           xchdir_at(xfatal_default(), &SITE, __VA_ARGS__)
+#define _XFUNCS_SITE \
+    (_xfuncs_site){ \
+        .file = __FILE__, \
+        .func = __func__, \
+        .line = __LINE__, \
+    }
+
+#define xopen(...)            _xopen_at(xfatal_default(), &_XFUNCS_SITE, __VA_ARGS__)
+#define xdup2(...)            _xdup2_at(xfatal_default(), &_XFUNCS_SITE, __VA_ARGS__)
+#define xclose(...)           _xclose_at(xfatal_default(), &_XFUNCS_SITE, __VA_ARGS__)
+#define xmalloc(...)          _xmalloc_at(xfatal_default(), &_XFUNCS_SITE, __VA_ARGS__)
+#define xcalloc(...)          _xcalloc_at(xfatal_default(), &_XFUNCS_SITE, __VA_ARGS__)
+#define xrealloc(...)         _xrealloc_at(xfatal_default(), &_XFUNCS_SITE, __VA_ARGS__)
+#define xsigaction(...)       _xsigaction_at(xfatal_default(), &_XFUNCS_SITE, __VA_ARGS__)
+#define xsigemptyset(...)     _xsigemptyset_at(xfatal_default(), &_XFUNCS_SITE, __VA_ARGS__)
+#define xsigaddset(...)       _xsigaddset_at(xfatal_default(), &_XFUNCS_SITE, __VA_ARGS__)
+#define xsigdelset(...)       _xsigdelset_at(xfatal_default(), &_XFUNCS_SITE, __VA_ARGS__)
+#define xsigprocmask(...)     _xsigprocmask_at(xfatal_default(), &_XFUNCS_SITE, __VA_ARGS__)
+#define xsetpgid(...)         _xsetpgid_at(xfatal_default(), &_XFUNCS_SITE, __VA_ARGS__)
+#define xtcsetpgrp(...)       _xtcsetpgrp_at(xfatal_default(), &_XFUNCS_SITE, __VA_ARGS__)
+#define xgetcwd(...)          _xgetcwd_at(xfatal_default(), &_XFUNCS_SITE, __VA_ARGS__)
+#define xkill(...)            _xkill_at(xfatal_default(), &_XFUNCS_SITE, __VA_ARGS__)
+#define xatexit(...)          _xatexit_at(xfatal_default(), &_XFUNCS_SITE, __VA_ARGS__)
+#define xpipe(...)            _xpipe_at(xfatal_default(), &_XFUNCS_SITE, __VA_ARGS__)
+#define xpipe2(...)           _xpipe2_at(xfatal_default(), &_XFUNCS_SITE, __VA_ARGS__)
+#define xfork()               _xfork_at(xfatal_default(), &_XFUNCS_SITE)
+#define xtcgetattr(...)       _xtcgetattr_at(xfatal_default(), &_XFUNCS_SITE, __VA_ARGS__)
+#define xtcsetattr(...)       _xtcsetattr_at(xfatal_default(), &_XFUNCS_SITE, __VA_ARGS__)
+#define xforkpty(...)         _xforkpty_at(xfatal_default(), &_XFUNCS_SITE, __VA_ARGS__)
+#define xpoll(...)            _xpoll_at(xfatal_default(), &_XFUNCS_SITE, __VA_ARGS__)
+#define xtimerfd_create(...)  _xtimerfd_create_at(xfatal_default(), &_XFUNCS_SITE, __VA_ARGS__)
+#define xtimerfd_settime(...) _xtimerfd_settime_at(xfatal_default(), &_XFUNCS_SITE, __VA_ARGS__)
+#define xstrdup(...)          _xstrdup_at(xfatal_default(), &_XFUNCS_SITE, __VA_ARGS__)
+#define xstrndup(...)         _xstrndup_at(xfatal_default(), &_XFUNCS_SITE, __VA_ARGS__)
+#define xsetvbuf(...)         _xsetvbuf_at(xfatal_default(), &_XFUNCS_SITE, __VA_ARGS__)
+#define xopendir(...)         _xopendir_at(xfatal_default(), &_XFUNCS_SITE, __VA_ARGS__)
+#define xclosedir(...)        _xclosedir_at(xfatal_default(), &_XFUNCS_SITE, __VA_ARGS__)
+#define xmkdir(...)           _xmkdir_at(xfatal_default(), &_XFUNCS_SITE, __VA_ARGS__)
+#define xrmdir(...)           _xrmdir_at(xfatal_default(), &_XFUNCS_SITE, __VA_ARGS__)
+#define xunlink(...)          _xunlink_at(xfatal_default(), &_XFUNCS_SITE, __VA_ARGS__)
+#define xchdir(...)           _xchdir_at(xfatal_default(), &_XFUNCS_SITE, __VA_ARGS__)
 
 static inline int
-xopen_at(xfatal *xf, const site_info *site, const char *pathname, int flags, ...) {
+_xopen_at(xfatal *xf, _xfuncs_site *site, const char *pathname, int flags, ...) {
     va_list va;
     mode_t mode = 0;
 
@@ -173,315 +181,316 @@ xopen_at(xfatal *xf, const site_info *site, const char *pathname, int flags, ...
 
     int rv = open(pathname, flags, mode);
     if (rv == -1)
-        SYS_FAIL(xf, open, pathname, flags);
+        _XFUNCS_SYS_FAIL(xf, site, open, pathname, flags);
 
     return rv;
 }
 
 static inline int
-xdup2_at(xfatal *xf, const site_info *site, int oldfd, int newfd) {
+_xdup2_at(xfatal *xf, _xfuncs_site *site, int oldfd, int newfd) {
     int rv = dup2(oldfd, newfd);
     if (rv == -1)
-        SYS_FAIL(xf, dup2, oldfd, newfd);
+        _XFUNCS_SYS_FAIL(xf, site, dup2, oldfd, newfd);
 
     return rv;
 }
 
 static inline int
-xclose_at(xfatal *xf, const site_info *site, int fd) {
+_xclose_at(xfatal *xf, _xfuncs_site *site, int fd) {
     int rv = close(fd);
     if (rv == -1)
-        SYS_FAIL(xf, close, fd);
+        _XFUNCS_SYS_FAIL(xf, site, close, fd);
 
     return rv;
 }
 
 static inline void *
-xmalloc_at(xfatal *xf, const site_info *site, int size) {
+_xmalloc_at(xfatal *xf, _xfuncs_site *site, int size) {
     void *rv = malloc(size);
     if (!rv)
-        SYS_FAIL(xf, malloc, size);
+        _XFUNCS_SYS_FAIL(xf, site, malloc, size);
 
     return rv;
 }
 
 static inline void *
-xcalloc_at(xfatal *xf, const site_info *site, size_t nmemb, size_t size) {
+_xcalloc_at(xfatal *xf, _xfuncs_site *site, size_t nmemb, size_t size) {
     void *rv = calloc(nmemb, size);
     if (!rv)
-        SYS_FAIL(xf, calloc, nmemb, size);
+        _XFUNCS_SYS_FAIL(xf, site, calloc, nmemb, size);
 
     return rv;
 }
 
 static inline void *
-xrealloc_at(xfatal *xf, const site_info *site, void *ptr, int size) {
+_xrealloc_at(xfatal *xf, _xfuncs_site *site, void *ptr, int size) {
     void *rv = realloc(ptr, size);
     if (!rv)
-        SYS_FAIL(xf, realloc, ptr, size);
+        _XFUNCS_SYS_FAIL(xf, site, realloc, ptr, size);
 
     return rv;
 }
 
 static inline int
-xsigaction_at(xfatal *xf, const site_info *site, int signum,
+_xsigaction_at(xfatal *xf, _xfuncs_site *site, int signum,
         const struct sigaction *act, struct sigaction *oldact) {
     int rv = sigaction(signum, act, oldact);
     if (rv == -1)
-        SYS_FAIL(xf, sigaction, signum, act, oldact);
+        _XFUNCS_SYS_FAIL(xf, site, sigaction, signum, act, oldact);
 
     return rv;
 }
 
 static inline int
-xsigemptyset_at(xfatal *xf, const site_info *site, sigset_t *set) {
+_xsigemptyset_at(xfatal *xf, _xfuncs_site *site, sigset_t *set) {
     int rv = sigemptyset(set);
     if (rv == -1)
-        SYS_FAIL(xf, sigemptyset, set);
+        _XFUNCS_SYS_FAIL(xf, site, sigemptyset, set);
 
     return rv;
 }
 
 static inline int
-xsigaddset_at(xfatal *xf, const site_info *site, sigset_t *set, int signum) {
+_xsigaddset_at(xfatal *xf, _xfuncs_site *site, sigset_t *set, int signum) {
     int rv = sigaddset(set, signum);
     if (rv == -1)
-        SYS_FAIL(xf, sigaddset, set, signum);
+        _XFUNCS_SYS_FAIL(xf, site, sigaddset, set, signum);
 
     return rv;
 }
 
 static inline int
-xsigdelset_at(xfatal *xf, const site_info *site, sigset_t *set, int signum) {
+_xsigdelset_at(xfatal *xf, _xfuncs_site *site, sigset_t *set, int signum) {
     int rv = sigdelset(set, signum);
     if (rv == -1)
-        SYS_FAIL(xf, sigdelset, set, signum);
+        _XFUNCS_SYS_FAIL(xf, site, sigdelset, set, signum);
 
     return rv;
 }
 
 static inline int
-xsigprocmask_at(xfatal *xf, const site_info *site, int how, const sigset_t *set,
+_xsigprocmask_at(xfatal *xf, _xfuncs_site *site, int how, const sigset_t *set,
         sigset_t *oldset) {
     int rv = sigprocmask(how, set, oldset);
     if (rv == -1)
-        SYS_FAIL(xf, sigprocmask, how, set, oldset);
+        _XFUNCS_SYS_FAIL(xf, site, sigprocmask, how, set, oldset);
 
     return rv;
 }
 
 static inline int
-xsetpgid_at(xfatal *xf, const site_info *site, pid_t pid, pid_t pgid) {
+_xsetpgid_at(xfatal *xf, _xfuncs_site *site, pid_t pid, pid_t pgid) {
     int rv = setpgid(pid, pgid);
     if (rv == -1)
-        SYS_FAIL(xf, setpgid, pid, pgid);
+        _XFUNCS_SYS_FAIL(xf, site, setpgid, pid, pgid);
 
     return rv;
 }
 
 static inline int
-xtcsetpgrp_at(xfatal *xf, const site_info *site, int fd, pid_t pgrp) {
+_xtcsetpgrp_at(xfatal *xf, _xfuncs_site *site, int fd, pid_t pgrp) {
     int rv = tcsetpgrp(fd, pgrp);
     if (rv == -1)
-        SYS_FAIL(xf, tcsetpgrp, fd, pgrp);
+        _XFUNCS_SYS_FAIL(xf, site, tcsetpgrp, fd, pgrp);
 
     return rv;
 }
 
 static inline char *
-xgetcwd_at(xfatal *xf, const site_info *site, char *buf, size_t size) {
+_xgetcwd_at(xfatal *xf, _xfuncs_site *site, char *buf, size_t size) {
     char *rv = getcwd(buf, size);
     if (!rv)
-        SYS_FAIL(xf, getcwd, buf, size);
+        _XFUNCS_SYS_FAIL(xf, site, getcwd, buf, size);
 
     return rv;
 }
 
 static inline int
-xkill_at(xfatal *xf, const site_info *site, pid_t pid, int sig) {
+_xkill_at(xfatal *xf, _xfuncs_site *site, pid_t pid, int sig) {
     int rv = kill(pid, sig);
     if (rv == -1)
-        SYS_FAIL(xf, kill, pid, sig);
+        _XFUNCS_SYS_FAIL(xf, site, kill, pid, sig);
 
     return rv;
 }
 
 static inline int
-xatexit_at(xfatal *xf, const site_info *site, void (*function)(void)) {
+_xatexit_at(xfatal *xf, _xfuncs_site *site, void (*function)(void)) {
     int rv = atexit(function);
     if (rv == -1)
-        SYS_FAIL(xf, atexit, function);
+        _XFUNCS_SYS_FAIL(xf, site, atexit, function);
 
     return rv;
 }
 
 static inline int
-xpipe_at(xfatal *xf, const site_info *site, int pipefd[2]) {
+_xpipe_at(xfatal *xf, _xfuncs_site *site, int pipefd[2]) {
     int rv = pipe(pipefd);
     if (rv == -1)
-        SYS_FAIL(xf, pipe, pipefd);
+        _XFUNCS_SYS_FAIL(xf, site, pipe, pipefd);
 
     return rv;
 }
 
 static inline int
-xpipe2_at(xfatal *xf, const site_info *site, int pipefd[2], int flags) {
+_xpipe2_at(xfatal *xf, _xfuncs_site *site, int pipefd[2], int flags) {
     int rv = pipe2(pipefd, flags);
     if (rv == -1)
-        SYS_FAIL(xf, pipe2, pipefd, flags);
+        _XFUNCS_SYS_FAIL(xf, site, pipe2, pipefd, flags);
 
     return rv;
 }
 
 static inline int
-xfork_at(xfatal *xf, const site_info *site) {
+_xfork_at(xfatal *xf, _xfuncs_site *site) {
     int rv = fork();
     if (rv == -1)
-        SYS_FAIL(xf, fork);
+        _XFUNCS_SYS_FAIL(xf, site, fork);
 
     return rv;
 }
 
 static inline int
-xtcgetattr_at(xfatal *xf, const site_info *site, int fd, struct termios *tio) {
+_xtcgetattr_at(xfatal *xf, _xfuncs_site *site, int fd, struct termios *tio) {
     int rv = tcgetattr(fd, tio);
     if (rv == -1)
-        SYS_FAIL(xf, tcgetattr, fd, tio);
+        _XFUNCS_SYS_FAIL(xf, site, tcgetattr, fd, tio);
 
     return rv;
 }
 
 static inline int
-xtcsetattr_at(xfatal *xf, const site_info *site, int fd, int optional_actions,
+_xtcsetattr_at(xfatal *xf, _xfuncs_site *site, int fd, int optional_actions,
         const struct termios *termios_p)
 {
     int rv = tcsetattr(fd, optional_actions, termios_p);
     if (rv == -1)
-        SYS_FAIL(xf, tcsetattr, fd, optional_actions, termios_p);
+        _XFUNCS_SYS_FAIL(xf, site, tcsetattr, fd, optional_actions, termios_p);
 
     return rv;
 }
 
 
 static inline int
-xforkpty_at(xfatal *xf, const site_info *site, int *amaster, char *name,
+_xforkpty_at(xfatal *xf, _xfuncs_site *site, int *amaster, char *name,
         const struct termios *tio, const struct winsize *winp) {
     int rv = forkpty(amaster, name, tio, winp);
     if (rv == -1)
-        SYS_FAIL(xf, forkpty, amaster, name, tio, winp);
+        _XFUNCS_SYS_FAIL(xf, site, forkpty, amaster, name, tio, winp);
 
     return rv;
 }
 
 static inline int
-xpoll_at(xfatal *xf, const site_info *site, struct pollfd *fds, nfds_t nfds,
+_xpoll_at(xfatal *xf, _xfuncs_site *site, struct pollfd *fds, nfds_t nfds,
         int timeout) {
     int rv = poll(fds, nfds, timeout);
     if (rv == -1)
-        SYS_FAIL(xf, poll, fds, nfds, timeout);
+        _XFUNCS_SYS_FAIL(xf, site, poll, fds, nfds, timeout);
 
     return rv;
 }
 
 static inline int
-xtimerfd_create_at(xfatal *xf, const site_info *site, int clockid, int flags) {
+_xtimerfd_create_at(xfatal *xf, _xfuncs_site *site, int clockid, int flags) {
     int rv = timerfd_create(clockid, flags);
     if (rv == -1)
-        SYS_FAIL(xf, timerfd_create, clockid, flags);
+        _XFUNCS_SYS_FAIL(xf, site, timerfd_create, clockid, flags);
 
     return rv;
 }
 
 static inline int
-xtimerfd_settime_at(xfatal *xf, const site_info *site, int fd, int flags,
+_xtimerfd_settime_at(xfatal *xf, _xfuncs_site *site, int fd, int flags,
         const struct itimerspec *new_value, struct itimerspec *old_value) {
     int rv = timerfd_settime(fd, flags, new_value, old_value);
     if (rv == -1)
-        SYS_FAIL(xf, timerfd_settime, fd, flags, new_value, old_value);
+        _XFUNCS_SYS_FAIL(xf, site, timerfd_settime, fd, flags, new_value, old_value);
 
     return rv;
 }
 
 static inline char *
-xstrdup_at(xfatal *xf, const site_info *site, const char *s) {
+_xstrdup_at(xfatal *xf, _xfuncs_site *site, const char *s) {
     char *rv = strdup(s);
     if (!rv)
-        SYS_FAIL(xf, strdup, s);
+        _XFUNCS_SYS_FAIL(xf, site, strdup, s);
 
     return rv;
 }
 
 static inline char *
-xstrndup_at(xfatal *xf, const site_info *site, const char *s, size_t n) {
+_xstrndup_at(xfatal *xf, _xfuncs_site *site, const char *s, size_t n) {
     char *rv = strndup(s, n);
     if (!rv)
-        SYS_FAIL(xf, strndup, s, n);
+        _XFUNCS_SYS_FAIL(xf, site, strndup, s, n);
 
     return rv;
 }
 
 static inline int
-xsetvbuf_at(xfatal *xf, const site_info *site, FILE *stream, char *buf,
+_xsetvbuf_at(xfatal *xf, _xfuncs_site *site, FILE *stream, char *buf,
         int mode, size_t size) {
     int rv = setvbuf(stream, buf, mode, size);
     if (rv != 0)
-        SYS_FAIL(xf, setvbuf, stream, buf, mode, size);
+        _XFUNCS_SYS_FAIL(xf, site, setvbuf, stream, buf, mode, size);
 
     return rv;
 }
 
 static inline DIR *
-xopendir_at(xfatal *xf, const site_info *site, const char *name) {
+_xopendir_at(xfatal *xf, _xfuncs_site *site, const char *name) {
     DIR *rv = opendir(name);
     if (!rv)
-        SYS_FAIL(xf, opendir, name, name);
+        _XFUNCS_SYS_FAIL(xf, site, opendir, name, name);
 
     return rv;
 }
 
 static inline int
-xclosedir_at(xfatal *xf, const site_info *site, DIR *dirp) {
+_xclosedir_at(xfatal *xf, _xfuncs_site *site, DIR *dirp) {
     int rv = closedir(dirp);
     if (rv == -1)
-        SYS_FAIL(xf, closedir, dirp);
+        _XFUNCS_SYS_FAIL(xf, site, closedir, dirp);
 
     return rv;
 }
 
 static inline int
-xmkdir_at(xfatal *xf, const site_info *site, const char *pathname, mode_t mode) {
+_xmkdir_at(xfatal *xf, _xfuncs_site *site, const char *pathname, mode_t mode) {
     int rv = mkdir(pathname, mode);
     if (rv == -1)
-        SYS_FAIL(xf, mkdir, pathname, mode);
+        _XFUNCS_SYS_FAIL(xf, site, mkdir, pathname, mode);
 
     return rv;
 }
 
 static inline int
-xrmdir_at(xfatal *xf, const site_info *site, const char *pathname) {
+_xrmdir_at(xfatal *xf, _xfuncs_site *site, const char *pathname) {
     int rv = rmdir(pathname);
     if (rv == -1)
-        SYS_FAIL(xf, rmdir, pathname);
+        _XFUNCS_SYS_FAIL(xf, site, rmdir, pathname);
 
     return rv;
 }
 
 static inline int
-xunlink_at(xfatal *xf, const site_info *site, const char *pathname) {
+_xunlink_at(xfatal *xf, _xfuncs_site *site, const char *pathname) {
     int rv = unlink(pathname);
     if (rv == -1)
-        SYS_FAIL(xf, unlink, pathname);
+        _XFUNCS_SYS_FAIL(xf, site, unlink, pathname);
 
     return rv;
 }
 
 static inline int
-xchdir_at(xfatal *xf, const site_info *site, const char *pathname) {
+_xchdir_at(xfatal *xf, _xfuncs_site *site, const char *pathname) {
     int rv = chdir(pathname);
     if (rv == -1)
-        SYS_FAIL(xf, chdir, pathname);
+        _XFUNCS_SYS_FAIL(xf, site, chdir, pathname);
 
     return rv;
 }
 
+// #undef _XFUNCS_SYS_FAIL
 #endif

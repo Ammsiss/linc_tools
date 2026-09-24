@@ -9,7 +9,7 @@
 
 #include "common.h"
 
-#define CHILD_MAX 256
+#define _TRIE_CHILD_MAX 256
 
 typedef enum {
     TRIE_MATCH,
@@ -21,7 +21,7 @@ typedef enum {
 typedef struct Trie Trie;
 
 struct Trie {
-    Trie *children[CHILD_MAX];
+    Trie *children[_TRIE_CHILD_MAX];
     size_t child_n;
     bool term;
     void *data; /* valid if term is true */
@@ -33,13 +33,13 @@ struct Trie {
 static inline Trie *trie_create(void) {
     Trie *tr = calloc(1, sizeof(Trie));
     if (!tr)
-        LIB_FATAL("calloc: out of memory");
+        _LINC_LIB_FATAL("calloc: out of memory");
 
     return tr;
 }
 
 static inline void trie_destroy(Trie *tr) {
-    for (size_t i = 0; i < CHILD_MAX; ++i)
+    for (size_t i = 0; i < _TRIE_CHILD_MAX; ++i)
         if (tr->children[i])
             trie_destroy(tr->children[i]);
 
@@ -59,7 +59,7 @@ static inline void trie_add(Trie *tr, const char *s, void *data, size_t sz) {
         if (sz > 0) {
             tr->data = malloc(sz);
             if (!tr->data)
-                LIB_FATAL("malloc: out of memory");
+                _LINC_LIB_FATAL("malloc: out of memory");
 
             memcpy(tr->data, data, sz);
         }
@@ -105,4 +105,5 @@ static inline void *trie_lookup(Trie *tr, const char *s, trie_status *stat) {
     return trie_lookup(tr->children[ch], &s[1], stat);
 }
 
+#undef _TRIE_CHILD_MAX
 #endif

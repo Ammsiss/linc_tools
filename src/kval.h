@@ -73,7 +73,7 @@ static inline int kv_add_imp(kval *kv, void *k, void *v, k_fn fn) {
 
     el->v = malloc(kv->v_sz);
     if (!el->v)
-        LIB_FATAL("malloc: out of memory");
+        _LINC_LIB_FATAL("malloc: out of memory");
 
     memcpy(el->v, v, kv->v_sz);
 
@@ -94,7 +94,7 @@ static inline int kv_set_imp(kval *kv, void *k, void *v, k_fn fn) {
 
     el->v = malloc(kv->v_sz);
     if (!el->v)
-        LIB_FATAL("malloc: out of memory");
+        _LINC_LIB_FATAL("malloc: out of memory");
 
     memcpy(el->v, v, kv->v_sz);
 
@@ -141,7 +141,7 @@ static inline void *str_canon_k(kval *kv, const void *k) {
 
     void *canon_k = calloc(kv->k_sz, 1);
     if (!canon_k)
-        LIB_FATAL("calloc: out of memory");
+        _LINC_LIB_FATAL("calloc: out of memory");
 
     strcpy(canon_k, k);
     return canon_k;
@@ -152,7 +152,7 @@ static inline void *num_canon_k(kval *kv, const void *k) {
 
     int *canon_k = calloc(kv->k_sz, 1);
     if (!canon_k)
-        LIB_FATAL("calloc: out of memory");
+        _LINC_LIB_FATAL("calloc: out of memory");
 
     *canon_k = *(int *)k;
     return canon_k;
@@ -161,7 +161,7 @@ static inline void *num_canon_k(kval *kv, const void *k) {
 static inline kval *kv_create(size_t k_sz, size_t v_sz) {
     kval *kv = malloc(sizeof(kval));
     if (!kv)
-        LIB_FATAL("malloc: out of memory");
+        _LINC_LIB_FATAL("malloc: out of memory");
 
     kv->pairs = nullptr;
     kv->k_sz = k_sz;

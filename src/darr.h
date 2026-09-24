@@ -16,7 +16,7 @@
         size_t cap; \
     } name;
 
-static inline void *da_reserve_imp(void *data, size_t el_sz, size_t min,
+static inline void *_da_reserve_imp(void *data, size_t el_sz, size_t min,
         size_t *cap)
 {
     if (*cap >= min)
@@ -26,7 +26,7 @@ static inline void *da_reserve_imp(void *data, size_t el_sz, size_t min,
 
     void *tmp = realloc(data, *cap * el_sz);
     if (!tmp)
-        LIB_FATAL("realloc: out of memory");
+        _LINC_LIB_FATAL("realloc: out of memory");
 
     data = tmp;
 
@@ -50,7 +50,7 @@ static inline void *da_reserve_imp(void *data, size_t el_sz, size_t min,
     do { \
         assert(arr); \
         size_t min = _min; \
-        (arr)->data = da_reserve_imp( \
+        (arr)->data = _da_reserve_imp( \
             (arr)->data, \
             sizeof(*(arr)->data), \
             min, \
@@ -100,5 +100,7 @@ static inline void *da_reserve_imp(void *data, size_t el_sz, size_t min,
             _da_p = NULL; \
         _da_p; \
     })
+
+#undef DA_MAX
 
 #endif
