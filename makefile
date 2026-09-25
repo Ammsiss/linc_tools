@@ -37,6 +37,6 @@ $(BUILD)/%.o: %.c
 	$(CC) $(CC_FLAGS) -c $< -o $@
 
 clean:
-	rm -rf $(BUILD)
+	rm -rf $(BUILD) linc_tools.h
 
 -include $(DEPS)

@@ -2,6 +2,7 @@
 #define LINC_TOOLS_LLOG_H
 
 #include <assert.h>
+#include <execinfo.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <stdarg.h>
@@ -11,6 +12,8 @@
 
 #include "common.h"
 #include "dstr.h"
+
+#define _LLOG_BT_SIZE 64
 
 #define LLOG_SITE \
     (llog_site_info){ \
@@ -60,6 +63,8 @@ typedef struct {
     pid_t pgid;
     pid_t tid;
     char *msg;
+    void *bt[_LLOG_BT_SIZE];
+    size_t bt_n;
 } llog_info;
 
 typedef void (llog_sink)(const llog_info *);
@@ -75,12 +80,24 @@ static inline void _llog_convert_special_chars(char **output_msg) {
     dstr_init(&out);
 
     for (char *c = *output_msg; *c != '\0'; ++c) {
-        if (*c == '\n') {
-            dstrcat(&out, "\\n");
-        } else if (*c == '\t') {
-            dstrcat(&out, "\\t");
-        } else
-            dstr_push(&out, *c);
+        switch (*c) {
+        case '\n': dstrcat(&out, "\\n"); break;
+        case '\t': dstrcat(&out, "\\t"); break;
+        case '\r': dstrcat(&out, "\\r"); break;
+        case '\b': dstrcat(&out, "\\b"); break;
+        case '\a': dstrcat(&out, "\\a"); break;
+        case '\f': dstrcat(&out, "\\f"); break;
+        case '\v': dstrcat(&out, "\\v"); break;
+        default:
+            if (*c < 0x20) { /* fallback to caret notation */
+                dstr_push(&out, '^');
+                dstr_push(&out, *c + '@');
+            } else if (*c == 0x7F) { /*DEL*/
+                dstr_push(&out, *c);
+            } else {
+                dstr_push(&out, *c);
+            }
+        }
     }
 
     free(*output_msg);
@@ -110,6 +127,7 @@ static inline void llog_log(llog *log, llog_lvl lvl, const llog_site_info *site,
     info.ppid = getppid();
     info.pgid = getpgrp();
     info.tid = gettid();
+    info.bt_n = backtrace(info.bt, _LLOG_BT_SIZE);
 
     va_start(va, fmt);
      if (vasprintf(&info.msg, fmt, va) < 0)
