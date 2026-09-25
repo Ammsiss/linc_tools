@@ -176,6 +176,17 @@ TEST(hda, push_struct_type) {
     hda_free(data);
 }
 
+TEST(hda, hda_push_buf) {
+    const char *s = "hello";
+    unsigned char *data = nullptr;
+
+    hda_insert_buf(data, 0, 4, s);
+    TEST_ASSERT_EQUAL_size_t(4, hda_size(data));
+    TEST_ASSERT_EQUAL_STRING_LEN("hell", data, 4);
+
+    hda_free(data);
+}
+
 /************ Test runner ************/
 
 TEST_GROUP_RUNNER(hda) {
@@ -191,4 +202,5 @@ TEST_GROUP_RUNNER(hda) {
     RUN_TEST_CASE(hda, insert_elements_after_existing);
     RUN_TEST_CASE(hda, get_last_element);
     RUN_TEST_CASE(hda, push_struct_type);
+    RUN_TEST_CASE(hda, hda_push_buf);
 }

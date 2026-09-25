@@ -43,6 +43,15 @@
             n \
     ))
 
+#define hda_insert_buf(hda, index, n, ...) \
+    (hda = _hda_insert_imp( \
+            hda, \
+            (__VA_ARGS__), \
+            _HDA_EL_SZ(hda), \
+            index, \
+            n \
+    ))
+
 #define hda_delete(hda, index, n) \
     _hda_delete_imp(hda, _HDA_EL_SZ(hda), index, n)
 
